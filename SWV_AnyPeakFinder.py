@@ -15,11 +15,12 @@ __status__ = "Production"
 # Setup: import basic modules we need
 import csv
 import os
-#import time
 import platform
-#import glob
 import re
 import sys
+import pylab
+import numpy
+from scipy.optimize import leastsq
 
 # Setup: import tkinter for GUI
 import tkinter
@@ -30,18 +31,12 @@ except ImportError:
 from tkinter import filedialog as tkFileDialog
 
 # Setup: import curve fitting and plotting
-#import scipy
-#import scipy.optimize
 if platform == 'darwin':
-    print("OSX")
     import matplotlib
     matplotlib.use("TkAgg")
 else:
     pass
-import pylab
-#import matplotlib.pylab as pylab
-import numpy
-from scipy.optimize import leastsq
+
 
 # Define our classes
 
@@ -74,41 +69,39 @@ class PointBrowser(object):
         self.ax.set_ylabel('Current (A)')
         self.ax.ticklabel_format(style='sci', scilimits=(0, 0), axis='y')
         self.ax.set_title('Peak Current for ' + str(fileTitle))
-       # pylab.get_current_fig_manager().window.wm_geometry("400x400+400+10")
-        #pylab.draw()
+        # pylab.get_current_fig_manager().window.wm_geometry("400x400+400+10")
 
         self.lastind = 0
 
         # self.selected = self.ax.plot([self.x[0]], [self.y[0]], 'o', ms=12,
-        #                               alpha=0.4, color='yellow', visible=False)
+        # alpha=0.4, color='yellow', visible=False)
 
         # Display button to fetch data
         self.axb = pylab.axes([0.75, 0.03, 0.15, 0.05])
         self.button = pylab.Button(self.axb, 'Results')
-        #self.ax.plot._test = self.button
+        # self.ax.plot._test = self.button
         # self.button.on_clicked(self.app.data_popup)
 
-        #self.fig.canvas.mpl_connect('pick_event', self.onpick)
+        # self.fig.canvas.mpl_connect('pick_event', self.onpick)
         self.fig.canvas.draw()
         pylab.show()
-        
+
     def onclick(self, event):
-        print("clicked")
+        # print("clicked")
         return
-        
 
     def onpick(self, event):
         '''Capture the click event, find the corresponding data
         point, then update accordingly.'''
-        print("Detected click")
+        # print("Detected click")
         # the click locations
         try:
             thisone = event.artist
             x = thisone.mouseevent.xdata
             y = thisone.mouseevent.ydata
 
-            #x = event.mouseevent.xdata
-            #y = event.mouseevent.ydata
+            # x = event.mouseevent.xdata
+            # y = event.mouseevent.ydata
             dx = numpy.array(x - self.x[thisone.ind], dtype=float)
             dy = numpy.array(y - self.y[thisone.ind], dtype=float)
 
@@ -119,15 +112,15 @@ class PointBrowser(object):
             self.lastind = dataind
             self.update()
         except Exception:
-            print("oops")
+            # print("oops")
             pass
 
     def update(self):
         '''Update the main graph and call my response function.'''
         if self.lastind is None:
-            print("no index")
+            # print("no index")
             return
-        print("index")
+        # print("index")
         dataind = self.lastind
 
         # self.selected.set_visible(True)
@@ -137,7 +130,7 @@ class PointBrowser(object):
 
         self.fig.canvas.draw()
         pylab.show()
-        #pylab.canvas.draw()
+        # pylab.canvas.draw()
 
 
 class PeakFinderApp(tkinter.Tk):
@@ -289,8 +282,8 @@ class PeakFinderApp(tkinter.Tk):
             # import windows file management
             from pathlib import Path
             self.mydocs = str(Path.home())
-            #from win32com.shell import shell, shellcon
-            #self.mydocs = shell.SHGetFolderPath(
+            # from win32com.shell import shell, shellcon
+            # self.mydocs = shell.SHGetFolderPath(
             #    0, shellcon.CSIDL_PERSONAL, 0, 0)
         else:
             # import mac file management
@@ -338,7 +331,7 @@ class PeakFinderApp(tkinter.Tk):
             helpframe, text=self.window_title + ' Help',
             font='helvetica 12 bold',
             anchor="center").grid(column=0, row=0, sticky=(
-            tkinter.N, tkinter.W, tkinter.E))
+                tkinter.N, tkinter.W, tkinter.E))
         helptext = tkinter.Text(helpframe, width=40, height=9)
         helpmessage = "Peak Finder is used to find the peak current for a" +\
             "methylene blue reduction peak for CH instruments voltammogram" +\
@@ -357,7 +350,7 @@ class PeakFinderApp(tkinter.Tk):
 
     def data_popup(self, event):
         '''Display a pop-up window of data.'''
-        print("data")
+        # print("data")
         filename = str(self.filename_.get()) + ".csv"
         self.dataDialog = tkinter.Toplevel(self)
         self.dataDialog.resizable(tkinter.FALSE, tkinter.FALSE)
@@ -404,7 +397,7 @@ class PeakFinderApp(tkinter.Tk):
                 filetypes=[("CSV Files", "*.csv"), ("TXT Files", "*.txt")])
             self.filenames_.set(filenamesRaw)
             self.dir_selected.set(1)
-            #return longpath
+            # return longpath
             return 0
         except Exception:
             pass
@@ -438,7 +431,9 @@ class PeakLogicFiles(object):
                 file_list = []
                 structures = filenames.split(",")
                 for i in structures:
-                    if (i.strip()[0] == i.strip()[-1]) and i.strip().startswith(("'", '"')):
+                    cond1 = (i.strip()[0] == i.strip()[-1])
+                    cond2 = i.strip().startswith(("'", '"'))
+                    if cond1 and cond2:
                         file_list.append(i.strip()[1:-1])
                     else:
                         file_list.append(i.strip())
@@ -460,8 +455,9 @@ class PeakLogicFiles(object):
                         ",".join(('Init Potential',
                                   str(self.app.init_potential_.get()))) + '\n')
                     self.g.write(
-                        ",".join(('Final Potential',
-                                  str(self.app.final_potential_.get()))) + '\n')
+                        ",".join(
+                            ('Final Potential', str(
+                                self.app.final_potential_.get()))) + '\n')
                     self.g.write(
                         ",".join(('Peak Center',
                                   str(self.app.peak_center_.get()))) + '\n')
@@ -476,11 +472,12 @@ class PeakLogicFiles(object):
                     self.g.write(",".join(('time', 'file', 'peak current')) +
                                  '\n')
                     # run the peakfinder
-                    printing_list, iplist = self.loop_for_peaks_files(filenamesList)
+                    printing_list, iplist = self.loop_for_peaks_files(
+                        filenamesList)
 
                 # Show the user what was found
                 self.app.output.set("Wrote output to " + filename + ".csv")
-                # mainGraph = 
+                # mainGraph =
                 PointBrowser(self.app, self, printing_list, iplist, filename)
                 return iplist
 
@@ -500,7 +497,7 @@ class PeakLogicFiles(object):
         full_y_lists = []
         startT = -1
         timelist = []
-        #realtimelist = []
+        # realtimelist = []
         printing_list = []
         try:
             pylab.close(2)  # close test fitting graph if open
@@ -565,7 +562,7 @@ class PeakLogicFiles(object):
         '''PeakLogic.peak_math() fits the data to a polynomial and a
         gaussian, then subtracts the polynomial to find peak current.'''
         # give reasonable starting values for non-linear regression
-        #v0 = [1.5e-6, -1e-7, 3e-6, 5e-7, -0.322, 30]
+        # v0 = [1.5e-6, -1e-7, 3e-6, 5e-7, -0.322, 30]
         iplist = []
         count = 1
         for xfile, yfile in zip(listsx, listsy):
@@ -583,7 +580,7 @@ class PeakLogicFiles(object):
         gaussian, then subtracts the cosh to find peak current..'''
         try:
             # give reasonable starting values for non-linear regression
-            #v0 = [1.5e-6, -1e-7, 3e-6, 5e-7, -0.322, 30]
+            # v0 = [1.5e-6, -1e-7, 3e-6, 5e-7, -0.322, 30]
             init_pot = self.app.init_potential_.get()
             final_pot = self.app.final_potential_.get()
             edgelength = numpy.abs(init_pot - final_pot)
@@ -592,23 +589,27 @@ class PeakLogicFiles(object):
             x = numpy.array(xfile, dtype=numpy.float64)
             y = numpy.array(yfile, dtype=numpy.float64)
             # fp is full portion with the cosh plus gaussian
-            #fp = lambda v, x: v[1] * numpy.cosh(v[0] * (x - v[2])) + v[
+            # fp = lambda v, x: v[1] * numpy.cosh(v[0] * (x - v[2])) + v[
             #    3] * numpy.exp(-(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
             # pp is the cosh portion
-            #pp = lambda v, x: v[1] * numpy.cosh(v[0] * (x - v[2]))
-            
-            fp = lambda v, x: (v[0]*(x ** 2)) + (v[0]*x) + v[1] + v[
-                3] * numpy.exp(-(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
+            # pp = lambda v, x: v[1] * numpy.cosh(v[0] * (x - v[2]))
+
+            def fp(v, x):
+                return (v[0] * (x ** 2)) + (v[0] * x) + v[1] + v[3] * \
+                    numpy.exp(-(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
             # pp is the cosh portion
-            pp = lambda v, x: (v[0]*(x ** 2)) + (v[0]*x) + v[1] 
+
+            def pp(v, x):
+                return (v[0] * (x ** 2)) + (v[0] * x) + v[1]
             # gp is the gaussian portion - now not used
-            #gp = lambda v, x: v[3] * numpy.exp(
+            # gp = lambda v, x: v[3] * numpy.exp(
             #    -(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
 
             # ep = lambda v, x, y: (pp(v,x)-y)  #ep is the error for a cosh fit
             # eg = lambda v, x, y: (gp(v,x)-y)  #eg is the error for a gaussian
             # e is the error of the full fit from the real data
-            e = lambda v, x, y: (fp(v, x) - y)
+            def e(v, x, y):
+                return (fp(v, x) - y)
 
             # First, we will fit the data
             # cut out outliers
@@ -623,33 +624,33 @@ class PeakLogicFiles(object):
                 PeakHeight = numpy.max(passingy[less & greater])
             except Exception:
                 PeakHeight = numpy.max(passingy)
-            #center =   passingx[passingy == PeakHeight])
-            
+            # center =   passingx[passingy == PeakHeight])
+
             # give reasonable starting values for non-linear regression
             v0 = [0.5, AA, numpy.average(
                 passingx), PeakHeight, center, edgelength / 6]
-            #y_subbed = []  # clear a list for putting revised y values
+            # y_subbed = []  # clear a list for putting revised y values
 
             # fit the gaussin and baseline to all data
             v, _success = leastsq(e, v0, args=(passingx, passingy))
-            #print fp(v, v[4])
-            #print pp(v, v[4])
-            #print (fp(v, v[4]) - pp(v, v[4]))
+            # print fp(v, v[4])
+            # print pp(v, v[4])
+            # print (fp(v, v[4]) - pp(v, v[4]))
             ip = (fp(v, v[4]) - pp(v, v[4]))
-                  # find the max value of the gaussian peak (minus the
-                  # polynomial)
-            #print ip
-            #if v[4] > init_pot:
+            # find the max value of the gaussian peak (minus the
+            # polynomial)
+            # print ip
+            # if v[4] > init_pot:
             #    ip = 0
-            #if v[4] < final_pot:
+            # if v[4] < final_pot:
             #    ip = 0
             if flag == 1:
                 return ip
             if flag == 0:
                 return x, y, fp(v, passingx), pp(v, passingx), ip, passingx
         except Exception:
-            print("Error Fitting")
-            print(sys.exc_info())
+            # print("Error Fitting")
+            # print(sys.exc_info())
             return -1
 
     def trunc_list(self, listx, listy):
@@ -708,7 +709,7 @@ class PeakLogicFiles(object):
         # Make sure the user has selected a directory
         if int(self.app.dir_selected.get()) == 1:
             try:
-                #filename = str(self.app.filename_.get())
+                # filename = str(self.app.filename_.get())
                 filenames = self.app.filenames_.get()
                 filenames = filenames[1:]
                 filenames = filenames[:-1]
@@ -716,7 +717,9 @@ class PeakLogicFiles(object):
                 file_list = []
                 structures = filenames.split(",")
                 for i in structures:
-                    if (i.strip()[0] == i.strip()[-1]) and i.strip().startswith(("'", '"')):
+                    cond1 = (i.strip()[0] == i.strip()[-1])
+                    cond2 = i.strip().startswith(("'", '"'))
+                    if cond1 and cond2:
                         file_list.append(i.strip()[1:-1])
                     else:
                         file_list.append(i.strip())
@@ -778,7 +781,7 @@ class PeakLogicFiles(object):
                 pylab.close(2)  # close previous test if open
             except Exception:
                 pass
-            #print ip
+            # print ip
             file_name = os.path.basename(file)
             self.fig2 = pylab.figure(2)
             self.ax2 = self.fig2.add_subplot(111)
@@ -794,7 +797,7 @@ class PeakLogicFiles(object):
             self.fig2.subplots_adjust(left=0.15)
             self.text = self.ax2.text(0.05, 0.95, 'Peak Current:\n%.2e A' % ip,
                                       transform=self.ax2.transAxes, va='top')
-            #pylab.get_current_fig_manager().window.wm_geometry(
+            # pylab.get_current_fig_manager().window.wm_geometry(
             #    "300x300+400+500")
             pylab.show()
 
@@ -836,6 +839,7 @@ class ProgressBar(object):
             0, 0, self.canvas.winfo_width() * value / self.maxval,
             self.canvas.winfo_reqheight(), fill='blue')
         self.root.update()
+
 
 # Party ####
 if __name__ == '__main__':
