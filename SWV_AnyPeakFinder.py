@@ -428,7 +428,13 @@ class PeakLogicFiles(object):
                 filenames = filenames[:-1]
                 file_list = []
                 structures = filenames.split(",")
+                new_structures = []
                 for i in structures:
+                    if len(i) < 6:
+                        pass
+                    else:
+                        new_structures.append(i)
+                for i in new_structures:
                     cond1 = (i.strip()[0] == i.strip()[-1])
                     cond2 = i.strip().startswith(("'", '"'))
                     if cond1 and cond2:
@@ -688,7 +694,13 @@ class PeakLogicFiles(object):
                 filenames = filenames[:-1]
                 file_list = []
                 structures = filenames.split(",")
+                new_structures = []
                 for i in structures:
+                    if len(i) < 6:
+                        pass
+                    else:
+                        new_structures.append(i)
+                for i in new_structures:
                     cond1 = (i.strip()[0] == i.strip()[-1])
                     cond2 = i.strip().startswith(("'", '"'))
                     if cond1 and cond2:
