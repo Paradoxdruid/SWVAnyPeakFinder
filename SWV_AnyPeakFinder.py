@@ -58,8 +58,7 @@ class PointBrowser(object):
 
         self.ax = self.fig.add_subplot(111)
         self.ax.plot(self.x, self.y, 'bo-', picker=5)
-        # TODO: Fix click detection
-        # self.fig.canvas.mpl_connect('pick_event', self.onpick)
+        self.fig.canvas.mpl_connect('pick_event', self.onpick)
         # self.fig.canvas.mpl_connect('button_press_event', self.onclick)
         self.fig.subplots_adjust(left=0.17)
         self.ax.set_xlabel('File')
@@ -71,46 +70,36 @@ class PointBrowser(object):
 
         self.lastind = 0
 
-        # self.selected = self.ax.plot([self.x[0]], [self.y[0]], 'o', ms=12,
-        # alpha=0.4, color='yellow', visible=False)
-
+        self.selected = self.ax.plot([self.x[0]], [self.y[0]], 'o', ms=12,
+                                  alpha=0.4, color='yellow', visible=True)
         # Display button to fetch data
         self.axb = pylab.axes([0.75, 0.03, 0.15, 0.05])
         self.button = pylab.Button(self.axb, 'Results')
         # self.ax.plot._test = self.button
         # self.button.on_clicked(self.app.data_popup)
 
-        # self.fig.canvas.mpl_connect('pick_event', self.onpick)
         self.fig.canvas.draw()
         pylab.show()
 
-    def onclick(self, event):
-        return
+    # def onclick(self, event):
+    #     return
 
     def onpick(self, event):
         '''Capture the click event, find the corresponding data
         point, then update accordingly.'''
-        # TODO: Fix click detection function
-        # the click locations
-        try:
-            thisone = event.artist
-            x = thisone.mouseevent.xdata
-            y = thisone.mouseevent.ydata
 
-            # x = event.mouseevent.xdata
-            # y = event.mouseevent.ydata
-            dx = numpy.array(x - self.x[thisone.ind], dtype=float)
-            dy = numpy.array(y - self.y[thisone.ind], dtype=float)
+        thisone = event.artist
 
-            distances = numpy.hypot(dx, dy)
-            indmin = distances.argmin()
-            dataind = thisone.ind[indmin]
+        x = thisone.get_xdata()
+        y = thisone.get_ydata()
+        dataind = event.ind
 
-            self.lastind = dataind
-            self.update()
-        except Exception:
-            print("Click detection failure")
-            pass
+        self.selected[0].set_data(x[dataind], y[dataind])
+
+        self.logic.test_fit(dataind)
+
+        self.fig.canvas.draw()
+        pylab.show()
 
     def update(self):
         '''Update the main graph and call my response function.'''
@@ -118,9 +107,8 @@ class PointBrowser(object):
             return
         dataind = self.lastind
 
-        # TODO: Fix click detection display
-        # self.selected.set_visible(True)
-        # self.selected.set_data(self.x[dataind], self.y[dataind])
+        self.selected.set_visible(True)
+        self.selected.set_data(self.x[dataind], self.y[dataind])
 
         self.logic.test_fit(dataind)
 
@@ -708,13 +696,17 @@ class PeakLogicFiles(object):
                     else:
                         file_list.append(i.strip())
                 filenamesList = file_list
-
+                # for i, each in enumerate(filenamesList):
+                #     print('Index: {}'.format(i))
+                #     print('Filename: {}'.format(each))
                 # Deprecated tkinter file access
                 # filenamesList = list(self.app.tk.splitlist(filenames))
                 # filenamesList.append(filenamesList.pop(0))
                 # filenamesList = tuple(filenamesList)
-
+                # print('Data index: {}'.format(dataind))
+                dataind = int(dataind)
                 file = filenamesList[dataind]
+                # print('Filename: {}'.format(file))
                 dialect = csv.Sniffer().sniff(
                     open(file).read(1024), delimiters="\t,")
                 open(file).seek(0)
@@ -748,10 +740,13 @@ class PeakLogicFiles(object):
                             y_list.append(row[1])
                         else:
                             pass
+                # print('Or is it the fitting math?')
                 x, y, y_fp, y_pp, ip, px = self.fitting_math(
                     x_list, y_list, flag=0)
+                # print('Or is it the grapher?')
                 self.test_grapher(x, y, y_fp, y_pp, file, ip, px)
             except Exception:
+                # print('Failed fitting math')
                 pass
         else:
             pass
@@ -780,9 +775,11 @@ class PeakLogicFiles(object):
                                       transform=self.ax2.transAxes, va='top')
             # pylab.get_current_fig_manager().window.wm_geometry(
             #    "300x300+400+500")
+            self.fig2.canvas.draw()
             pylab.show()
 
         except Exception:
+            # print('Failed displaying graph')
             pass
 
 
