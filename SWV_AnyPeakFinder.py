@@ -146,7 +146,7 @@ class PeakFinderApp(tkinter.Tk):
         # define our variables in GUI-form and give sane defaults
         self.filename_ = tkinter.StringVar(value='output1')
         self.output = tkinter.StringVar()
-        self.filenames_ = tkinter.StringVar()
+        self.filenames_ = []
         self.dir_selected = tkinter.IntVar(value=0)
         self.init_potential_ = tkinter.DoubleVar(value=-0.15)
         self.final_potential_ = tkinter.DoubleVar(value=-0.35)
@@ -383,7 +383,7 @@ class PeakFinderApp(tkinter.Tk):
             filenamesRaw = tkFileDialog.askopenfilenames(
                 title='Title',
                 filetypes=[("CSV Files", "*.csv"), ("TXT Files", "*.txt")])
-            self.filenames_.set(filenamesRaw)
+            self.filenames_ = list(filenamesRaw)
             self.dir_selected.set(1)
             return 0
         except Exception:
@@ -411,25 +411,7 @@ class PeakLogicFiles(object):
             try:
                 # grab the text variables that we need
                 filename = str(self.app.filename_.get())
-                filenames = self.app.filenames_.get()
-                filenames = filenames[1:]
-                filenames = filenames[:-1]
-                file_list = []
-                structures = filenames.split(",")
-                new_structures = []
-                for i in structures:
-                    if len(i) < 6:
-                        pass
-                    else:
-                        new_structures.append(i)
-                for i in new_structures:
-                    cond1 = (i.strip()[0] == i.strip()[-1])
-                    cond2 = i.strip().startswith(("'", '"'))
-                    if cond1 and cond2:
-                        file_list.append(i.strip()[1:-1])
-                    else:
-                        file_list.append(i.strip())
-                filenamesList = file_list
+                filenamesList = self.app.filenames_
                 path = os.path.normpath(filenamesList[0])
                 path = os.path.dirname(path)
                 self.app.bar.set_maxval(len(filenamesList) + 1)
@@ -676,34 +658,7 @@ class PeakLogicFiles(object):
         # Make sure the user has selected a directory
         if int(self.app.dir_selected.get()) == 1:
             try:
-                # filename = str(self.app.filename_.get())
-                filenames = self.app.filenames_.get()
-                filenames = filenames[1:]
-                filenames = filenames[:-1]
-                file_list = []
-                structures = filenames.split(",")
-                new_structures = []
-                for i in structures:
-                    if len(i) < 6:
-                        pass
-                    else:
-                        new_structures.append(i)
-                for i in new_structures:
-                    cond1 = (i.strip()[0] == i.strip()[-1])
-                    cond2 = i.strip().startswith(("'", '"'))
-                    if cond1 and cond2:
-                        file_list.append(i.strip()[1:-1])
-                    else:
-                        file_list.append(i.strip())
-                filenamesList = file_list
-                # for i, each in enumerate(filenamesList):
-                #     print('Index: {}'.format(i))
-                #     print('Filename: {}'.format(each))
-                # Deprecated tkinter file access
-                # filenamesList = list(self.app.tk.splitlist(filenames))
-                # filenamesList.append(filenamesList.pop(0))
-                # filenamesList = tuple(filenamesList)
-                # print('Data index: {}'.format(dataind))
+                filenamesList = self.app.filenames_
                 dataind = int(dataind)
                 file = filenamesList[dataind]
                 # print('Filename: {}'.format(file))
