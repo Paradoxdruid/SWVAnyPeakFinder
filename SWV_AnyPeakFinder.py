@@ -431,7 +431,6 @@ class PeakFinderApp(tkinter.Tk):
         )
         self.filenames_ = list(filenamesRaw)
         self.dir_selected.set(1)
-        pass
 
 
 class PeakLogicFiles:
