@@ -13,6 +13,7 @@ __email__ = "bonham@gmail.com"
 __status__ = "Production"
 
 # Setup: import basic modules we need
+
 import csv
 import os
 import platform
@@ -25,9 +26,11 @@ import tkinter
 from tkinter import filedialog as tkFileDialog
 
 # Setup Type annotation
+
 from typing import List, Tuple, Any
 
 # Setup: Fix OS specific problems with ttk and tkinter
+
 try:
     import ttk
 except ImportError:
@@ -38,7 +41,7 @@ if platform.system() == "Darwin":
 
     matplotlib.use("TkAgg")
 
-# Define our classes
+# Define our Classes
 
 
 class PointBrowser:
@@ -862,6 +865,6 @@ class ProgressBar:
         self.root.update()
 
 
-# Party ####
+# Main magic
 if __name__ == "__main__":
     app: PeakFinderApp = PeakFinderApp()
