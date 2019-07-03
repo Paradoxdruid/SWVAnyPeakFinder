@@ -2,6 +2,8 @@
 
 This program finds peak height values (i.e., peak currents) from .txt files and .csv files containing squarewave voltammogram data, using any selected files.
 
+![lgpl3.0](https://img.shields.io/github/license/Paradoxdruid/SWVAnyPeakFinder.svg "LGPL 3.0 Licensed")
+
 ## Getting Started
 
 To run the program:
