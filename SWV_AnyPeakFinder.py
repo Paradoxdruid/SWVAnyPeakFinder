@@ -536,7 +536,7 @@ class PeakLogicFiles:
                             start_pattern = index
                     # except Exception:
                     #     pass
-                datalist: List[List[str]] = listfile[start_pattern + 2:]
+                datalist: List[List[str]] = listfile[start_pattern + 2 :]
                 pointT: int = 1000
                 # if it's the first data point, set the initial time to zero
                 if startT == -1:
@@ -747,7 +747,7 @@ class PeakLogicFiles:
                                 start_pattern = index
                     except Exception:
                         pass
-                datalist: List[str] = listfile[start_pattern + 2:]
+                datalist: List[str] = listfile[start_pattern + 2 :]
 
                 x_list: List[str] = []
                 y_list: List[str] = []
