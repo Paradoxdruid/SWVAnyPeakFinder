@@ -604,14 +604,14 @@ class PeakLogicFiles:
             def fp(v: List[float], x: numpy.ndarray) -> numpy.ndarray:
                 return (
                     (v[0] * (x ** 2))
-                    + (v[0] * x)
-                    + v[1]
+                    + (v[1] * x)
+                    + v[2]
                     + v[3] * numpy.exp(-(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
                 )
 
             # pp is just the exp / cosh portion
             def pp(v: List[float], x: numpy.ndarray) -> numpy.ndarray:
-                return (v[0] * (x ** 2)) + (v[0] * x) + v[1]
+                return (v[0] * (x ** 2)) + (v[1] * x) + v[2]
 
             # e is the error of the full fit from the real data
             def e(v: List[float], x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray:
