@@ -7,7 +7,7 @@ selected files. """
 __author__ = "Andrew J. Bonham"
 __copyright__ = "Copyright 2010-2019, Andrew J. Bonham"
 __credits__ = ["Andrew J. Bonham"]
-__version__ = 1.5
+__version__ = 1.6
 __maintainer__ = "Andrew J. Bonham"
 __email__ = "bonham@gmail.com"
 __status__ = "Production"
@@ -20,7 +20,7 @@ import platform
 import re
 import sys
 import numpy
-from scipy.optimize import leastsq
+from scipy.optimize import least_squares
 import pylab
 import tkinter
 from tkinter import filedialog as tkFileDialog
@@ -150,7 +150,7 @@ class PeakFinderApp(tkinter.Tk):
 
         self.directory_manager()
         tkinter.Tk.__init__(self)
-        self.window_title = "Any Peak Finder {}".format(str(__version__))
+        self.window_title = "SWV AnyPeakFinder {}".format(str(__version__))
 
         # invoke PeakLogicFiles to do the actual work
         logic: "PeakLogicFiles" = PeakLogicFiles(self)
@@ -175,9 +175,9 @@ class PeakFinderApp(tkinter.Tk):
         self.output = tkinter.StringVar()
         self.filenames_: List[str] = []
         self.dir_selected = tkinter.IntVar(value=0)
-        self.init_potential_ = tkinter.DoubleVar(value=-0.15)
-        self.final_potential_ = tkinter.DoubleVar(value=-0.35)
-        self.peak_center_ = tkinter.DoubleVar(value=-0.25)
+        self.init_potential_ = tkinter.DoubleVar(value=-0.2)
+        self.final_potential_ = tkinter.DoubleVar(value=-0.4)
+        self.peak_center_ = tkinter.DoubleVar(value=-0.3)
         self.final_edge_ = tkinter.DoubleVar(value=-1)
         self.init_edge_ = tkinter.DoubleVar(value=1)
 
@@ -646,9 +646,16 @@ class PeakLogicFiles:
             ]
 
             # fit the background and baseline to all data
-            v: List[float]
-            _success: Any
-            v, _success = leastsq(e, v0, args=(passingx, passingy))
+            _results: Any = least_squares(
+                e,
+                v0,
+                args=(passingx, passingy),
+                bounds=(  # constain an upward facing parabola
+                    [0, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf],
+                    numpy.inf,
+                ),
+            )
+            v: Any = _results.x
 
             ip: numpy.ndarray = fp(v, v[4]) - pp(v, v[4])
 
