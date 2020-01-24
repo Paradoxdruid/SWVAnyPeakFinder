@@ -7,7 +7,7 @@ selected files. """
 __author__ = "Andrew J. Bonham"
 __copyright__ = "Copyright 2010-2019, Andrew J. Bonham"
 __credits__ = ["Andrew J. Bonham"]
-__version__ = 1.5
+__version__ = 1.6
 __maintainer__ = "Andrew J. Bonham"
 __email__ = "bonham@gmail.com"
 __status__ = "Production"
@@ -20,7 +20,7 @@ import platform
 import re
 import sys
 import numpy
-from scipy.optimize import leastsq
+from scipy.optimize import least_squares
 import pylab
 import tkinter
 from tkinter import filedialog as tkFileDialog
@@ -111,10 +111,9 @@ class PointBrowser:
 
         thisone = event.artist
         x = thisone.get_xdata()
-        y = thisone.get_ydata()
-        dataind = event.ind
+        ind = event.ind
 
-        self.selected[0].set_data(x[dataind], y[dataind])
+        dataind = x[ind[0]]
 
         self.logic.test_fit(dataind)
 
@@ -150,7 +149,7 @@ class PeakFinderApp(tkinter.Tk):
 
         self.directory_manager()
         tkinter.Tk.__init__(self)
-        self.window_title = "Any Peak Finder {}".format(str(__version__))
+        self.window_title = "SWV AnyPeakFinder {}".format(str(__version__))
 
         # invoke PeakLogicFiles to do the actual work
         logic: "PeakLogicFiles" = PeakLogicFiles(self)
@@ -175,11 +174,12 @@ class PeakFinderApp(tkinter.Tk):
         self.output = tkinter.StringVar()
         self.filenames_: List[str] = []
         self.dir_selected = tkinter.IntVar(value=0)
-        self.init_potential_ = tkinter.DoubleVar(value=-0.15)
-        self.final_potential_ = tkinter.DoubleVar(value=-0.35)
-        self.peak_center_ = tkinter.DoubleVar(value=-0.25)
+        self.init_potential_ = tkinter.DoubleVar(value=-0.2)
+        self.final_potential_ = tkinter.DoubleVar(value=-0.4)
+        self.peak_center_ = tkinter.DoubleVar(value=-0.3)
         self.final_edge_ = tkinter.DoubleVar(value=-1)
         self.init_edge_ = tkinter.DoubleVar(value=1)
+        self.guesses_ = None
 
         # display the entry boxes
         ttk.Label(mainframe, text=self.window_title, font="helvetica 12 bold").grid(
@@ -576,8 +576,21 @@ class PeakLogicFiles:
 
         iplist: List[float] = []
         count: int = 1
+        # give reasonable starting values for non-linear regression
+        if self.app.guesses_ is None:
+            starting_v0: List[float] = [1e-6, 1e-6, 1e-7, 1e-7, -0.3, 1e-8]
+        else:
+            starting_v0: List[float] = self.app.guesses_
+
         for xfile, yfile in zip(listsx, listsy):
-            ip: float = self.fitting_math(xfile, yfile, 1)
+            if count == 1:
+                ip: float
+                v0: List[float]
+                ip, v0 = self.fitting_math(xfile, yfile, starting_v0, 1)
+            else:
+                ip, _v0 = self.fitting_math(xfile, yfile, v0, 1)
+
+            # check data quality
             if ip < 0:
                 ip = 0
             iplist.append(ip)
@@ -587,7 +600,11 @@ class PeakLogicFiles:
         return iplist
 
     def fitting_math(
-        self, xfile: numpy.ndarray, yfile: numpy.ndarray, flag: int = 1
+        self,
+        xfile: numpy.ndarray,
+        yfile: numpy.ndarray,
+        guesses: List[float],
+        flag: int = 1,
     ) -> Any:
         """PeakLogic.fitting_math() fits the data to a cosh and a
         gaussian, then subtracts the cosh to find peak current.."""
@@ -635,27 +652,28 @@ class PeakLogicFiles:
             except Exception:  # TODO: More specific exception
                 PeakHeight = numpy.max(passingy)
 
-            # give reasonable starting values for non-linear regression
-            v0: List[float] = [
-                0.5,
-                AA,
-                numpy.average(passingx),
-                PeakHeight,
-                center,
-                edgelength / 6,
-            ]
+            # check if guesses
+            if guesses is None:
+                guesses = [1e-6, 1e-6, PeakHeight, AA, center, edgelength / 6]
 
             # fit the background and baseline to all data
-            v: List[float]
-            _success: Any
-            v, _success = leastsq(e, v0, args=(passingx, passingy))
+            _results: Any = least_squares(
+                e,
+                guesses,
+                args=(passingx, passingy),
+                bounds=(  # constain an upward facing parabola
+                    [0, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf],
+                    numpy.inf,
+                ),
+            )
+            v: Any = _results.x
 
             ip: numpy.ndarray = fp(v, v[4]) - pp(v, v[4])
 
             if flag == 1:
-                return ip
+                return ip, v
             if flag == 0:
-                return x, y, fp(v, passingx), pp(v, passingx), ip, passingx
+                return x, y, fp(v, passingx), pp(v, passingx), ip, passingx, v
 
         except Exception:
             print("Error Fitting")
@@ -768,7 +786,10 @@ class PeakLogicFiles:
                 y_pp: numpy.ndarray
                 ip: float
                 px: numpy.ndarray
-                x, y, y_fp, y_pp, ip, px = self.fitting_math(x_list, y_list, flag=0)
+                x, y, y_fp, y_pp, ip, px, v = self.fitting_math(
+                    x_list, y_list, guesses=None, flag=0
+                )
+                self.app.guesses_ = v
                 self.test_grapher(x, y, y_fp, y_pp, file, ip, px)
 
             except Exception:
