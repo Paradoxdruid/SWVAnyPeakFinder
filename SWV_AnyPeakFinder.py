@@ -456,7 +456,7 @@ class PeakLogicFiles:
         peak current values."""
 
         # Make sure the user has selected files
-        if not int(self.app.dir_selected.get()) == 1:
+        if int(self.app.dir_selected.get()) != 1:
             return []
 
         # grab the text variables that we need
@@ -488,15 +488,11 @@ class PeakLogicFiles:
             printing_list, iplist = self.loop_for_peaks_files(filenamesList)
 
         # Catch if peakfinder failed
-        try:
-            printing_list[0]
-            iplist[0]
-        except IndexError:
-            raise
-        # if not all([printing_list, iplist]):
-        #     raise
+        if not all([printing_list, iplist]):
+            self.app.output.set("Program failed!")
+            return iplist
 
-        # Show the user what was found
+        # Otherwise, show the user what was found
         self.app.output.set("Wrote output to {}.csv".format(filename))
         # mainGraph =
         PointBrowser(self.app, self, printing_list, iplist, filename)
