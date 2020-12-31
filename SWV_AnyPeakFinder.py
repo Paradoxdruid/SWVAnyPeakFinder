@@ -788,7 +788,7 @@ class PeakLogicFiles:
                 self.app.guesses_ = v
                 self.test_grapher(x, y, y_fp, y_pp, file, ip, px)
 
-            except Exception:
+            except (ValueError, IndexError):
                 pass
         else:
             pass
