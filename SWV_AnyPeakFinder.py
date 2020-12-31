@@ -24,6 +24,7 @@ from scipy.optimize import least_squares
 import pylab
 import tkinter
 from tkinter import filedialog as tkFileDialog
+import ttk
 
 # Setup Type annotation
 
@@ -31,10 +32,10 @@ from typing import List, Tuple, Any
 
 # Setup: Fix OS specific problems with ttk and tkinter
 
-try:
-    import ttk
-except ImportError:
-    import tkinter as ttk
+# try:
+#     import ttk
+# except ImportError:
+#     import tkinter as ttk
 
 if platform.system() == "Darwin":
     import matplotlib
@@ -455,52 +456,51 @@ class PeakLogicFiles:
         peak current values."""
 
         # Make sure the user has selected files
-        if int(self.app.dir_selected.get()) == 1:
-
-            # grab the text variables that we need
-            filename: str = str(self.app.filename_.get())
-            filenamesList: List[str] = self.app.filenames_
-            path: str = os.path.dirname(os.path.normpath(filenamesList[0]))
-            self.app.bar.set_maxval(len(filenamesList) + 1)
-            os.chdir(path)
-
-            # open our self.output file and set it up
-            with open("{}.csv".format(str(filename)), "w") as self.g:
-                self.g.write("{}\n\n".format(str(filename)))
-                self.g.write("Fitting Parameters\n")
-                self.g.write(
-                    "Init Potential,{}\n".format(str(self.app.init_potential_.get()))
-                )
-                self.g.write(
-                    "Final Potential,{}\n".format(str(self.app.final_potential_.get()))
-                )
-                self.g.write(
-                    "Peak Center,{}\n".format(str(self.app.peak_center_.get()))
-                )
-                self.g.write("Left Edge,{}\n".format(str(self.app.init_edge_.get())))
-                self.g.write(
-                    "Right Edge,{}\n\n".format(str(self.app.final_edge_.get()))
-                )
-                self.g.write("--------,--------\n")
-                self.g.write("time,file,peak current\n")
-
-                # run the peakfinder
-                printing_list: List
-                iplist: List
-                printing_list, iplist = self.loop_for_peaks_files(filenamesList)
-
-            # Catch if peakfinder failed
-            if not all([printing_list, iplist]):
-                raise
-
-            # Show the user what was found
-            self.app.output.set("Wrote output to {}.csv".format(filename))
-            # mainGraph =
-            PointBrowser(self.app, self, printing_list, iplist, filename)
-            return iplist
-
-        else:
+        if not int(self.app.dir_selected.get()) == 1:
             return []
+
+        # grab the text variables that we need
+        filename: str = str(self.app.filename_.get())
+        filenamesList: List[str] = self.app.filenames_
+        path: str = os.path.dirname(os.path.normpath(filenamesList[0]))
+        self.app.bar.set_maxval(len(filenamesList) + 1)
+        os.chdir(path)
+
+        # open our self.output file and set it up
+        with open("{}.csv".format(str(filename)), "w") as self.g:
+            self.g.write("{}\n\n".format(str(filename)))
+            self.g.write("Fitting Parameters\n")
+            self.g.write(
+                "Init Potential,{}\n".format(str(self.app.init_potential_.get()))
+            )
+            self.g.write(
+                "Final Potential,{}\n".format(str(self.app.final_potential_.get()))
+            )
+            self.g.write("Peak Center,{}\n".format(str(self.app.peak_center_.get())))
+            self.g.write("Left Edge,{}\n".format(str(self.app.init_edge_.get())))
+            self.g.write("Right Edge,{}\n\n".format(str(self.app.final_edge_.get())))
+            self.g.write("--------,--------\n")
+            self.g.write("time,file,peak current\n")
+
+            # run the peakfinder
+            printing_list: List
+            iplist: List
+            printing_list, iplist = self.loop_for_peaks_files(filenamesList)
+
+        # Catch if peakfinder failed
+        try:
+            printing_list[0]
+            iplist[0]
+        except IndexError:
+            raise
+        # if not all([printing_list, iplist]):
+        #     raise
+
+        # Show the user what was found
+        self.app.output.set("Wrote output to {}.csv".format(filename))
+        # mainGraph =
+        PointBrowser(self.app, self, printing_list, iplist, filename)
+        return iplist
 
     def loop_for_peaks_files(
         self, filenamesList: List[str]
@@ -559,7 +559,7 @@ class PeakLogicFiles:
                 timelist.append(pointTcorr)
                 justName: str = os.path.split(each)[1]
                 printing_list.append(justName)
-            except Exception:
+            except IndexError:  # Does this exception catch everything?
                 pass
         iplist: List[float] = self.peak_math(full_x_lists, full_y_lists)
 
@@ -649,7 +649,7 @@ class PeakLogicFiles:
             PeakHeight: float
             try:
                 PeakHeight = numpy.max(passingy[less & greater])
-            except Exception:  # TODO: More specific exception
+            except ValueError:
                 PeakHeight = numpy.max(passingy)
 
             # check if guesses
@@ -763,7 +763,7 @@ class PeakLogicFiles:
                         if line[0]:
                             if re.match("Potential*", line[0]):
                                 start_pattern = index
-                    except Exception:
+                    except IndexError:
                         pass
                 datalist: List[str] = listfile[start_pattern + 2 :]
 
