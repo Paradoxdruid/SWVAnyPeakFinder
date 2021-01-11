@@ -4,7 +4,7 @@ This program finds peak height values (i.e., peak currents) from .txt files and 
 
 ![lgpl3.0](https://img.shields.io/github/license/Paradoxdruid/SWVAnyPeakFinder.svg "LGPL 3.0 Licensed")  [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Paradoxdruid/SWVAnyPeakFinder.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Paradoxdruid/SWVAnyPeakFinder/context:python)  [![CodeFactor](https://www.codefactor.io/repository/github/paradoxdruid/swvanypeakfinder/badge)](https://www.codefactor.io/repository/github/paradoxdruid/swvanypeakfinder) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-![program screenshot](images/SWV_Peakerfinder.png)
+![program screenshot](images/SWV_Peakfinder.png)
 
 ## Getting Started
 
