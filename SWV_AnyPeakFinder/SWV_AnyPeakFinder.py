@@ -11,6 +11,11 @@ __version__ = 1.6
 __maintainer__ = "Andrew J. Bonham"
 __email__ = "bonham@gmail.com"
 __status__ = "Production"
+__description__ = (
+    "GUI application for resolving peak heights in square-wave voltammetry datafiles."
+)
+__license__ = "GPLv3"
+__url__ = "https://github.com/Paradoxdruid/SWVAnyPeakFinder"
 
 # Setup: import basic modules we need
 
