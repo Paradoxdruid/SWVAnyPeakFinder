@@ -7,23 +7,27 @@ This program finds peak height values (i.e., peak currents) from .txt files and 
 
 ![program screenshot](images/SWV_Peakfinder.png)
 
+## Installation
+
+```bash
+pip install SWV_AnyPeakFinder
+```
+
 ## Getting Started
 
 To run the program:
+
+```bash
+swv_anypeakfinder
+```
+
+or
 
 ```
 python SWV_AnyPeakFinder.py
 ```
 
-### Prerequisites
-
-This program depends on python3, and requires numpy, scipy, and matplotlib.  The GUI is drawn using tkinter (standard in python).
-
-
 ## Authors
 
-* **Andrew J. Bonham** - *Initial work* - [BonhamLab](http://www.bonhamlab.com/) / [Github](https://github.com/Paradoxdruid)
-
-## License
-
-This project is licensed under the GNU Lesser General Public License - see the [LICENSE](LICENSE) file for details
+## Authors
+This software is developed as academic software by [Dr. Andrew J. Bonham](https://github.com/Paradoxdruid) at the [Metropolitan State University of Denver](https://www.msudenver.edu). It is licensed under the LGPL v3.0.
