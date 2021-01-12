@@ -3,7 +3,7 @@
 """GUI_script wrapper for SWV_AnyPeakFinder."""
 
 import sys
-from . import SWV_AnyPeakFinder
+import SWV_AnyPeakFinder
 
 
 def main(args=None):
