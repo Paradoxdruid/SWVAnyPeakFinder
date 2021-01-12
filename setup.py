@@ -45,6 +45,6 @@ setup(
         "matplotlib",
     ],
     entry_points={
-        "gui_scripts": ["swv_anypeakfinder = SWV_AnyPeakFinder.__main__:main"],
+        "gui_scripts": ["swv_anypeakfinder = SWV_AnyPeakFinder.SWV_AnyPeakFinder:main"],
     },
 )

@@ -7,7 +7,7 @@ selected files. """
 __author__ = "Andrew J. Bonham"
 __copyright__ = "Copyright 2010-2019, Andrew J. Bonham"
 __credits__ = ["Andrew J. Bonham"]
-__version__ = "1.6.1"
+__version__ = "1.6.6"
 __maintainer__ = "Andrew J. Bonham"
 __email__ = "bonham@gmail.com"
 __status__ = "Production"
@@ -877,6 +877,11 @@ class ProgressBar:
         self.root.update()
 
 
+def main():
+    """Entry point for gui script."""
+    app: PeakFinderApp = PeakFinderApp()  # noqa
+
+
 # Main magic
 if __name__ == "__main__":
-    app: PeakFinderApp = PeakFinderApp()
+    main()
