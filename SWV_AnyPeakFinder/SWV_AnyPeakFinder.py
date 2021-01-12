@@ -24,18 +24,8 @@ from scipy.optimize import least_squares
 import pylab
 import tkinter
 from tkinter import filedialog as tkFileDialog
-import ttk
-
-# Setup Type annotation
-
+from tkinter import ttk
 from typing import List, Tuple, Any
-
-# Setup: Fix OS specific problems with ttk and tkinter
-
-# try:
-#     import ttk
-# except ImportError:
-#     import tkinter as ttk
 
 if platform.system() == "Darwin":
     import matplotlib
