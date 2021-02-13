@@ -143,8 +143,17 @@ class PeakFinderApp(tkinter.Tk):
     def __init__(self) -> None:
         """set up the peak finder app GUI."""
 
+        # Set up Azure ttk styling
+        cwd = os.path.split(os.path.abspath(__file__))[0]
+        up_one = os.path.split(cwd)[0]
+        azure_dir = os.path.join(up_one, "azure.tcl")
+
         self.directory_manager()
         tkinter.Tk.__init__(self)
+        style = ttk.Style(self)
+        self.tk.call("source", azure_dir)
+        style.theme_use("azure")
+
         self.window_title = "SWV AnyPeakFinder {}".format(str(__version__))
 
         # invoke PeakLogicFiles to do the actual work
