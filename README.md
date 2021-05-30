@@ -27,11 +27,10 @@ swv_anypeakfinder
 
 or
 
-```
+```bash
 python SWV_AnyPeakFinder.py
 ```
 
 ## Authors
 
-## Authors
 This software is developed as academic software by [Dr. Andrew J. Bonham](https://github.com/Paradoxdruid) at the [Metropolitan State University of Denver](https://www.msudenver.edu). It is licensed under the LGPL v3.0.

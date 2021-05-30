@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
 
-"""This program finds peak height values (i.e., peak currents) from .txt files
-and .csv files containing squarewave voltammogram data, using any
-selected files. """
+"""
+SWV Any PeakFinder.
 
-__author__ = "Andrew J. Bonham"
-__copyright__ = "Copyright 2010-2019, Andrew J. Bonham"
-__credits__ = ["Andrew J. Bonham"]
-__version__ = "1.6.6"
-__maintainer__ = "Andrew J. Bonham"
-__email__ = "bonham@gmail.com"
-__status__ = "Production"
-__description__ = (
-    "GUI application for resolving peak heights in square-wave voltammetry datafiles."
-)
-__license__ = "GPLv3"
-__url__ = "https://github.com/Paradoxdruid/SWVAnyPeakFinder"
+This program finds peak height values (i.e., peak currents) from .txt files
+and .csv files containing squarewave voltammogram data, using any
+selected files.
+"""
 
 # Setup: import basic modules we need
 
@@ -31,6 +22,7 @@ import tkinter
 from tkinter import filedialog as tkFileDialog
 from tkinter import ttk
 from typing import List, Tuple, Any
+from . import __version__ as version
 
 if platform.system() == "Darwin":
     import matplotlib
@@ -41,7 +33,6 @@ if platform.system() == "Darwin":
 
 
 class PointBrowser:
-
     """This is the class that draws the main graph of data for Peak Finder.
 
     This class creates a line and point graph with clickable points.
@@ -133,7 +124,6 @@ class PointBrowser:
 
 
 class PeakFinderApp(tkinter.Tk):
-
     """This is the gui for Peak Finder.
 
     This application displays a minimal user interface to select a
@@ -145,7 +135,7 @@ class PeakFinderApp(tkinter.Tk):
 
         self.directory_manager()
         tkinter.Tk.__init__(self)
-        self.window_title = "SWV AnyPeakFinder {}".format(str(__version__))
+        self.window_title = "SWV AnyPeakFinder {}".format(str(version.__version__))
 
         # invoke PeakLogicFiles to do the actual work
         logic: "PeakLogicFiles" = PeakLogicFiles(self)
@@ -324,7 +314,7 @@ class PeakFinderApp(tkinter.Tk):
                 "Voltammogram data analysis\nsoftware for "
                 "CH Instruments data.\n\nWritten by\n{0}\n"
                 "http://www.andrewjbonham.com\n{1}\n\n\n"
-            ).format(str(__author__), str(__copyright__)),
+            ).format(str(version.__author__), str(version.__copyright__)),
             anchor="center",
             justify="center",
         ).grid(column=0, row=1, sticky=tkinter.N)
@@ -433,7 +423,6 @@ class PeakFinderApp(tkinter.Tk):
 
 
 class PeakLogicFiles:
-
     """This is the internal logic of Peak Finder.
 
     PeaklogicFiles looks at a user-provided list of files, then fits
@@ -828,7 +817,6 @@ class PeakLogicFiles:
 
 
 class ProgressBar:
-
     """Create a tkinter Progress bar widget."""
 
     def __init__(
@@ -879,7 +867,7 @@ class ProgressBar:
 
 def main():
     """Entry point for gui script."""
-    app: PeakFinderApp = PeakFinderApp()  # noqa
+    _: PeakFinderApp = PeakFinderApp()  # noqa
 
 
 # Main magic
