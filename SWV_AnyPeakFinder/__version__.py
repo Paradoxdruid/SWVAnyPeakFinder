@@ -5,7 +5,7 @@ Information about the current version of the SWV_AnyPeakFinder package.
 __author__ = "Andrew J. Bonham"
 __copyright__ = "Copyright 2010-2019, Andrew J. Bonham"
 __credits__ = ["Andrew J. Bonham"]
-__version__ = "1.6.6"
+__version__ = "1.6.7"
 __maintainer__ = "Andrew J. Bonham"
 __email__ = "bonham@gmail.com"
 __status__ = "Production"
