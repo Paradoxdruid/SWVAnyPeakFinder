@@ -8,28 +8,27 @@ and .csv files containing squarewave voltammogram data, using any
 selected files.
 """
 
-# Setup: import basic modules we need
 
 import csv
 import os
 import platform
 import re
 import sys
-import numpy
-from scipy.optimize import least_squares
-import pylab
 import tkinter
-from tkinter import filedialog as tkFileDialog
-from tkinter import ttk
-from typing import List, Tuple, Any
+from pathlib import Path
+from tkinter import filedialog, ttk
+from typing import Any, List, Tuple
+
+import matplotlib.pyplot as plt
+import numpy
+from lmfit.models import LorentzianModel, LinearModel
+
 from . import __version__ as version
 
 if platform.system() == "Darwin":
     import matplotlib
 
     matplotlib.use("TkAgg")
-
-# Define our Classes
 
 
 class PointBrowser:
@@ -43,7 +42,7 @@ class PointBrowser:
         self,
         app: "PeakFinderApp",
         logic: "PeakLogicFiles",
-        xticksRaw: numpy.ndarray,
+        xticksRaw: List[int],
         y: List[float],
         fileTitle: str,
     ) -> None:
@@ -57,9 +56,9 @@ class PointBrowser:
         self.loc: List[float] = [d + 0.5 for d in self.x]
 
         # Setup the matplotlib figure
-        self.fig = pylab.figure(1)
+        self.fig = plt.figure(1)
         self.ax = self.fig.add_subplot(111)
-        self.ax.plot(self.x, self.y, "bo-", picker=5)
+        self.ax.plot(self.x, self.y, "bo-", picker=True, pickradius=5)
         self.fig.canvas.mpl_connect("pick_event", self.onpick)
         self.fig.subplots_adjust(left=0.17)
         self.ax.set_xlabel("File")
@@ -83,14 +82,14 @@ class PointBrowser:
         )
 
         # Display button to fetch data
-        self.axb = pylab.axes([0.75, 0.03, 0.15, 0.05])
-        self.button = pylab.Button(self.axb, "Results")
+        self.axb = plt.axes([0.75, 0.03, 0.15, 0.05])
+        self.button = plt.Button(self.axb, "Results")
         # self.ax.plot._test = self.button
         # self.button.on_clicked(self.app.data_popup)
 
         # Draw the figure
         self.fig.canvas.draw()
-        pylab.show()
+        plt.show()
 
     def onpick(self, event: Any) -> None:
         """Capture the click event, find the corresponding data
@@ -105,7 +104,7 @@ class PointBrowser:
         self.logic.test_fit(dataind)
 
         self.fig.canvas.draw()
-        pylab.show()
+        plt.show()
 
     def update(self) -> None:
         """Update the main graph and call my response function."""
@@ -120,7 +119,7 @@ class PointBrowser:
         self.logic.test_fit(dataind)
 
         self.fig.canvas.draw()
-        pylab.show()
+        plt.show()
 
 
 class PeakFinderApp(tkinter.Tk):
@@ -162,9 +161,9 @@ class PeakFinderApp(tkinter.Tk):
         self.dir_selected = tkinter.IntVar(value=0)
         self.init_potential_ = tkinter.DoubleVar(value=-0.2)
         self.final_potential_ = tkinter.DoubleVar(value=-0.4)
-        self.peak_center_ = tkinter.DoubleVar(value=-0.3)
+        self.peak_center_ = tkinter.DoubleVar(value=-0.4)
         self.final_edge_ = tkinter.DoubleVar(value=-1)
-        self.init_edge_ = tkinter.DoubleVar(value=1)
+        self.init_edge_ = tkinter.DoubleVar(value=-0.1)
         self.guesses_ = None
 
         # display the entry boxes
@@ -176,20 +175,6 @@ class PeakFinderApp(tkinter.Tk):
             mainframe, width=12, textvariable=self.filename_
         ).grid(column=2, row=2, sticky=(tkinter.W, tkinter.E))
         ttk.Label(mainframe, text="Filename:").grid(column=1, row=2, sticky=tkinter.W)
-
-        self.init_potential = ttk.Entry(
-            mainframe, width=12, textvariable=self.init_potential_
-        ).grid(column=2, row=7, sticky=(tkinter.W, tkinter.E))
-        ttk.Label(mainframe, text="Initial Potential:").grid(
-            column=1, row=7, sticky=tkinter.W
-        )
-
-        self.final_potential = ttk.Entry(
-            mainframe, width=12, textvariable=self.final_potential_
-        ).grid(column=2, row=8, sticky=(tkinter.W, tkinter.E))
-        ttk.Label(mainframe, text="Final Potential:").grid(
-            column=1, row=8, sticky=tkinter.W
-        )
 
         self.peak_center = ttk.Entry(
             mainframe, width=12, textvariable=self.peak_center_
@@ -268,20 +253,20 @@ class PeakFinderApp(tkinter.Tk):
         )
 
         # Run the program
-        pylab.show()
+        plt.show()
         self.mainloop()
 
     def directory_manager(self) -> None:
         """Set the initial directory to the users home directory."""
 
-        if platform.system() == "Windows":
-            # import windows file management
-            from pathlib import Path
+        # if platform.system() == "Windows":
+        #     # import windows file management
+        #     from pathlib import Path
 
-            self.mydocs: Any = str(Path.home())
-        else:
-            # import mac/linux file management
-            self.mydocs: Any = os.getenv("HOME")
+        self.mydocs: Any = str(Path.home())
+        # else:
+        #     # import mac/linux file management
+        #     self.mydocs: Any = os.getenv("HOME")
         os.chdir(self.mydocs)
 
     def about_popup(self) -> None:
@@ -414,8 +399,7 @@ class PeakFinderApp(tkinter.Tk):
         """Allow user to select a directory where datafiles
         are located."""
 
-        # filenamesRaw = tkinter.filedialog.askopenfilenames(
-        filenamesRaw = tkFileDialog.askopenfilenames(
+        filenamesRaw = filedialog.askopenfilenames(
             title="Title", filetypes=[("CSV Files", "*.csv"), ("TXT Files", "*.txt")]
         )
         self.filenames_ = list(filenamesRaw)
@@ -454,16 +438,9 @@ class PeakLogicFiles:
         with open("{}.csv".format(str(filename)), "w") as self.g:
             self.g.write("{}\n\n".format(str(filename)))
             self.g.write("Fitting Parameters\n")
-            self.g.write(
-                "Init Potential,{}\n".format(str(self.app.init_potential_.get()))
-            )
-            self.g.write(
-                "Final Potential,{}\n".format(str(self.app.final_potential_.get()))
-            )
             self.g.write("Peak Center,{}\n".format(str(self.app.peak_center_.get())))
             self.g.write("Left Edge,{}\n".format(str(self.app.init_edge_.get())))
             self.g.write("Right Edge,{}\n\n".format(str(self.app.final_edge_.get())))
-            self.g.write("--------,--------\n")
             self.g.write("time,file,peak current\n")
 
             # run the peakfinder
@@ -495,7 +472,7 @@ class PeakLogicFiles:
         timelist: List[int] = []
         printing_list: List[str] = []
 
-        pylab.close(2)  # close test fitting graph if open
+        plt.close(2)  # close test fitting graph if open
 
         for each in filenamesList:  # loop through each file
             try:
@@ -550,25 +527,17 @@ class PeakLogicFiles:
         # return time and peak current for graphing
         return timelist, iplist
 
-    def peak_math(self, listsx: numpy.ndarray, listsy: numpy.ndarray) -> List[float]:
+    def peak_math(
+        self, listsx: List[List[str]], listsy: List[List[str]]
+    ) -> List[float]:
         """PeakLogic.peak_math() passes each data file to .fitting_math,
         and returns a list of peak currents."""
 
         iplist: List[float] = []
         count: int = 1
-        # give reasonable starting values for non-linear regression
-        if self.app.guesses_ is None:
-            starting_v0: List[float] = [1e-6, 1e-6, 1e-7, 1e-7, -0.3, 1e-8]
-        else:
-            starting_v0: List[float] = self.app.guesses_
 
         for xfile, yfile in zip(listsx, listsy):
-            if count == 1:
-                ip: float
-                v0: List[float]
-                ip, v0 = self.fitting_math(xfile, yfile, starting_v0, 1)
-            else:
-                ip, _v0 = self.fitting_math(xfile, yfile, v0, 1)
+            ip = self.fitting_math(xfile, yfile, 1)
 
             # check data quality
             if ip < 0:
@@ -579,81 +548,62 @@ class PeakLogicFiles:
 
         return iplist
 
-    def fitting_math(
-        self,
-        xfile: numpy.ndarray,
-        yfile: numpy.ndarray,
-        guesses: List[float],
-        flag: int = 1,
-    ) -> Any:
+    @staticmethod
+    def add_lz_peak(prefix, center, amplitude=0.005, sigma=0.05):
+        peak = LorentzianModel(prefix=prefix)
+        pars = peak.make_params()
+        pars[prefix + "center"].set(center)
+        pars[prefix + "amplitude"].set(amplitude, min=0)
+        pars[prefix + "sigma"].set(sigma, min=0)
+        return peak, pars
+
+    def fitting_math(self, xfile: List[str], yfile: List[str], flag: int = 1,) -> Any:
         """PeakLogic.fitting_math() fits the data to a cosh and a
         gaussian, then subtracts the cosh to find peak current.."""
 
         try:
-            init_pot: float = self.app.init_potential_.get()
-            final_pot: float = self.app.final_potential_.get()
-            edgelength: float = numpy.abs(init_pot - final_pot)
             center: float = self.app.peak_center_.get()
             x: numpy.ndarray = numpy.array(xfile, dtype=numpy.float64)
             y: numpy.ndarray = numpy.array(yfile, dtype=numpy.float64)
-
-            # fp is full portion with the exp / cosh plus gaussian
-            def fp(v: List[float], x: numpy.ndarray) -> numpy.ndarray:
-                return (
-                    (v[0] * (x ** 2))
-                    + (v[1] * x)
-                    + v[2]
-                    + v[3] * numpy.exp(-(((x - v[4]) ** 2) / (2 * v[5] ** 2)))
-                )
-
-            # pp is just the exp / cosh portion
-            def pp(v: List[float], x: numpy.ndarray) -> numpy.ndarray:
-                return (v[0] * (x ** 2)) + (v[1] * x) + v[2]
-
-            # e is the error of the full fit from the real data
-            def e(v: List[float], x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray:
-                return fp(v, x) - y
 
             # cut out outliers
             passingx: numpy.ndarray
             passingy: numpy.ndarray
             passingx, passingy = self.trunc_edges(xfile, yfile)
 
-            # cut out the middle values and return the edges
-            _outx: numpy.ndarray
-            outy: numpy.ndarray
-            _outx, outy = self.trunc_list(passingx, passingy)
-            AA: float = numpy.average(outy)
-            less: numpy.ndarray = passingx < init_pot
-            greater: numpy.ndarray = passingx > final_pot
-            PeakHeight: float
-            try:
-                PeakHeight = numpy.max(passingy[less & greater])
-            except ValueError:
-                PeakHeight = numpy.max(passingy)
+            rough_peak_positions = [min(passingx), center]
 
-            # check if guesses
-            if guesses is None:
-                guesses = [1e-6, 1e-6, PeakHeight, AA, center, edgelength / 6]
+            min_y = float(min(passingy))
+            model = LinearModel(prefix="Background")
+            params = model.make_params()  # a=0, b=0, c=0
+            params.add("slope", 0, min=0)
+            # params.add("b", 0, min=0)
+            params.add("intercept", 0, min=min_y)
 
-            # fit the background and baseline to all data
-            _results: Any = least_squares(
-                e,
-                guesses,
-                args=(passingx, passingy),
-                bounds=(  # constain an upward facing parabola
-                    [0, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf],
-                    numpy.inf,
-                ),
-            )
-            v: Any = _results.x
+            for i, cen in enumerate(rough_peak_positions):
+                peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+                model = model + peak
+                params.update(pars)
 
-            ip: numpy.ndarray = fp(v, v[4]) - pp(v, v[4])
+            _ = model.eval(params, x=passingx)
+            result = model.fit(passingy, params, x=passingx)
+            comps = result.eval_components()
+
+            ip = float(max(comps["Peak_2"]))
 
             if flag == 1:
-                return ip, v
+                return ip
             if flag == 0:
-                return x, y, fp(v, passingx), pp(v, passingx), ip, passingx, v
+                return (
+                    x,
+                    y,
+                    result.best_fit,
+                    comps["Background"],
+                    comps["Peak_1"],
+                    comps["Peak_2"],
+                    ip,
+                    passingx,
+                )
 
         except Exception:
             print("Error Fitting")
@@ -763,14 +713,15 @@ class PeakLogicFiles:
                 x: numpy.ndarray
                 y: numpy.ndarray
                 y_fp: numpy.ndarray
-                y_pp: numpy.ndarray
+                y_bkg: numpy.ndarray
+                y_peak1: numpy.ndarray
+                y_peak2: numpy.ndarray
                 ip: float
                 px: numpy.ndarray
-                x, y, y_fp, y_pp, ip, px, v = self.fitting_math(
-                    x_list, y_list, guesses=None, flag=0
+                x, y, y_fp, y_bkg, y_peak1, y_peak2, ip, px = self.fitting_math(
+                    x_list, y_list, flag=0
                 )
-                self.app.guesses_ = v
-                self.test_grapher(x, y, y_fp, y_pp, file, ip, px)
+                self.test_grapher(x, y, y_fp, y_bkg, y_peak1, y_peak2, file, ip, px)
 
             except (ValueError, IndexError):
                 pass
@@ -782,21 +733,28 @@ class PeakLogicFiles:
         x: numpy.ndarray,
         y: numpy.ndarray,
         y_fp: numpy.ndarray,
-        y_pp: numpy.ndarray,
+        y_bkg: numpy.ndarray,
+        y_peak1: numpy.ndarray,
+        y_peak2: numpy.ndarray,
         file: str,
         ip: float,
         px: numpy.ndarray,
     ) -> None:
         """PeakLogic.test_grapher() displays a graph of the test fitting."""
 
-        pylab.close(2)  # close previous test if open
+        plt.close(2)  # close previous test if open
+
+        full_bkg = y_bkg + y_peak1  # add background components
 
         file_name: str = os.path.basename(file)
-        self.fig2 = pylab.figure(2)
+        self.fig2 = plt.figure(2)
         self.ax2 = self.fig2.add_subplot(111)
-        self.ax2.plot(x, y, "ro", label="data")
+        self.ax2.plot(x, y, "r.", label="data")
         self.ax2.plot(px, y_fp, label="fit")
-        self.ax2.plot(px, y_pp, label="baseline")
+        self.ax2.plot(px, full_bkg, label="background")
+        # self.ax2.plot(px, y_bkg, label="background")
+        # self.ax2.plot(px, y_peak1, label="peak 1")
+        self.ax2.plot(px, y_peak2, label="methylene blue")
         self.ax2.set_xlabel("Potential (V)")
         self.ax2.set_ylabel("Current (A)")
         self.ax2.set_title("Fit of {}".format(str(file_name)))
@@ -805,7 +763,7 @@ class PeakLogicFiles:
         self.fig2.subplots_adjust(bottom=0.15)
         self.fig2.subplots_adjust(left=0.15)
         self.text = self.ax2.text(
-            0.05,
+            0.1,
             0.95,
             "Peak Current:\n%.2e A" % ip,
             transform=self.ax2.transAxes,
@@ -813,7 +771,7 @@ class PeakLogicFiles:
         )
 
         self.fig2.canvas.draw()
-        pylab.show()
+        plt.show()
 
 
 class ProgressBar:
