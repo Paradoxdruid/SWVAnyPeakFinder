@@ -171,14 +171,14 @@ class PeakFinderApp(tkinter.Tk):
             column=1, row=1, sticky=tkinter.W, columnspan=2
         )
 
-        self.filename_entry = ttk.Entry(
-            mainframe, width=12, textvariable=self.filename_
-        ).grid(column=2, row=2, sticky=(tkinter.W, tkinter.E))
+        ttk.Entry(mainframe, width=12, textvariable=self.filename_).grid(
+            column=2, row=2, sticky=(tkinter.W, tkinter.E)
+        )
         ttk.Label(mainframe, text="Filename:").grid(column=1, row=2, sticky=tkinter.W)
 
-        self.peak_center = ttk.Entry(
-            mainframe, width=12, textvariable=self.peak_center_
-        ).grid(column=2, row=9, sticky=(tkinter.W, tkinter.E))
+        ttk.Entry(mainframe, width=12, textvariable=self.peak_center_).grid(
+            column=2, row=9, sticky=(tkinter.W, tkinter.E)
+        )
         ttk.Label(mainframe, text="Peak Center:").grid(
             column=1, row=9, sticky=tkinter.W
         )
@@ -214,12 +214,12 @@ class PeakFinderApp(tkinter.Tk):
         ttk.Label(mainframe, text="Regions to include (from -> to):").grid(
             column=1, row=12, sticky=tkinter.W
         )
-        self.final_edge = ttk.Entry(
-            mainframe, width=12, textvariable=self.final_edge_
-        ).grid(column=1, row=13, sticky=(tkinter.E))
-        self.init_edge = ttk.Entry(
-            mainframe, width=12, textvariable=self.init_edge_
-        ).grid(column=2, row=13, sticky=(tkinter.W, tkinter.E))
+        ttk.Entry(mainframe, width=12, textvariable=self.final_edge_).grid(
+            column=1, row=13, sticky=(tkinter.E)
+        )
+        ttk.Entry(mainframe, width=12, textvariable=self.init_edge_).grid(
+            column=2, row=13, sticky=(tkinter.W, tkinter.E)
+        )
 
         # Pad the windows for prettiness
         for child in mainframe.winfo_children():
@@ -610,36 +610,6 @@ class PeakLogicFiles:
             print(sys.exc_info())
             return -1
 
-    def trunc_list(
-        self, listx: numpy.ndarray, listy: numpy.ndarray
-    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
-        """Remove the central portions of an x-y data list (where we
-        suspect the gaussian is found)."""
-
-        newx: List[float] = []
-        newy: List[float] = []
-        start_spot: str
-        start_h: str
-        for start_spot, start_h in zip(listx, listy):
-            spot: float = float(start_spot)
-            h: float = float(start_h)
-            low: float = float(self.app.final_potential_.get())
-            high: float = float(self.app.init_potential_.get())
-            if spot < low:  # add low values
-                newx.append(spot)
-                newy.append(h)
-            else:
-                pass
-            if spot > high:  # add high values
-                newx.append(spot)
-                newy.append(h)
-            else:
-                pass
-
-        px: numpy.ndarray = numpy.array(newx, dtype=numpy.float64)
-        py: numpy.ndarray = numpy.array(newy, dtype=numpy.float64)
-        return px, py
-
     def trunc_edges(
         self, listx: numpy.ndarray, listy: numpy.ndarray
     ) -> Tuple[numpy.ndarray, numpy.ndarray]:
@@ -793,9 +763,7 @@ class ProgressBar:
             borderwidth=2,
         )
         self.canvas.create_rectangle(0, 0, 0, 0, fill="blue")
-        self.label = ttk.Label(self.root, text="Progress:").grid(
-            column=1, row=14, sticky=tkinter.W
-        )
+        ttk.Label(self.root, text="Progress:").grid(column=1, row=14, sticky=tkinter.W)
         self.canvas.grid(column=1, row=15, sticky=(tkinter.W, tkinter.E), columnspan=3)
 
     def set_maxval(self, maxval: float) -> None:
