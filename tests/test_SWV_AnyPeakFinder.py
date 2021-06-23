@@ -7,6 +7,17 @@ import SWV_AnyPeakFinder.SWV_AnyPeakFinder as swv
 import test_values
 
 
+def setup_PeakFinderApp(mocker):
+    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
+    app = swv.PeakFinderApp()
+    app.peak_center_.get.return_value = -0.4
+    app.final_edge_.get.return_value = -0.6
+    app.init_edge_.get.return_value = -0.1
+    logic = swv.PeakLogicFiles(app)
+
+    return logic
+
+
 def test_PeakLogicFiles_trunc_edges(mocker):
     mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
     app = swv.PeakFinderApp()
@@ -35,28 +46,16 @@ def test_PeakLogicFiles_add_lz_peak(mocker):
     app = swv.PeakFinderApp()
     logic = swv.PeakLogicFiles(app)
 
-    actual_peak, actual_params = logic.add_lz_peak(TEST_PREFIX, TEST_CENTER)
+    _, actual_params = logic.add_lz_peak(TEST_PREFIX, TEST_CENTER)
     # assert EXPECTED_PEAK == actual_peak  # FIXME
     assert EXPECTED_PARAMS == actual_params
 
 
 def test_PeakLogicFiles_fitting_math_flag_0(mocker):
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
-    app.peak_center_.get.return_value = -0.4
-    app.final_edge_.get.return_value = -0.6
-    app.init_edge_.get.return_value = -0.1
-    logic = swv.PeakLogicFiles(app)
+    logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = list(np.linspace(-0.7, 0, 200))
     x = np.linspace(-0.7, 0, 200)
-    TEST_Y_FILE = list(
-        (
-            (1e-6 * np.exp(-((x + 0.3) ** 2 / (2 * 0.05 ** 2))))
-            + (6e-6 * np.exp(-((x + 0.7) ** 2 / (2 * 0.01 ** 2))))
-            + -1e-6 * x
-            + 1e-6
-        )
-    )
+    TEST_Y_FILE = list(test_values.EXPECTED_Y_ARRAY)
     TEST_FLAG = 0
 
     EXPECTED_X = test_values.EXPECTED_X_FITTING_MATH
@@ -77,22 +76,9 @@ def test_PeakLogicFiles_fitting_math_flag_0(mocker):
 
 
 def test_PeakLogicFiles_fitting_math_flag_1(mocker):
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
-    app.peak_center_.get.return_value = -0.4
-    app.final_edge_.get.return_value = -0.6
-    app.init_edge_.get.return_value = -0.1
-    logic = swv.PeakLogicFiles(app)
+    logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = list(np.linspace(-0.7, 0, 200))
-    x = np.linspace(-0.7, 0, 200)
-    TEST_Y_FILE = list(
-        (
-            (1e-6 * np.exp(-((x + 0.3) ** 2 / (2 * 0.05 ** 2))))
-            + (6e-6 * np.exp(-((x + 0.7) ** 2 / (2 * 0.01 ** 2))))
-            + -1e-6 * x
-            + 1e-6
-        )
-    )
+    TEST_Y_FILE = list(test_values.EXPECTED_Y_ARRAY)
     TEST_FLAG = 1
 
     EXPECTED_IP = 1.2011916245135e-06
@@ -121,26 +107,9 @@ def test_PeakLogicFiles_test_fit(mocker):
 
 
 def test_PeakLogicFiles_peak_math(mocker):
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
-    app.peak_center_.get.return_value = -0.4
-    app.final_edge_.get.return_value = -0.6
-    app.init_edge_.get.return_value = -0.1
-    logic = swv.PeakLogicFiles(app)
+    logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = [(list(np.linspace(-0.7, 0, 200)))]
-    x = np.linspace(-0.7, 0, 200)
-    TEST_Y_FILE = [
-        (
-            list(
-                (
-                    (1e-6 * np.exp(-((x + 0.3) ** 2 / (2 * 0.05 ** 2))))
-                    + (6e-6 * np.exp(-((x + 0.7) ** 2 / (2 * 0.01 ** 2))))
-                    + -1e-6 * x
-                    + 1e-6
-                )
-            )
-        )
-    ]
+    TEST_Y_FILE = [(list(test_values.EXPECTED_Y_ARRAY))]
 
     EXPECTED_IP_LIST = [1.2011916245135e-06]
     iplist = logic.peak_math(TEST_X_FILE, TEST_Y_FILE)

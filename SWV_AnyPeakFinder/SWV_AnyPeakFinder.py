@@ -25,7 +25,7 @@ from lmfit.models import LorentzianModel, LinearModel
 
 from . import __version__ as version
 
-if platform.system() == "Darwin":
+if platform.system() == "Darwin":  # noqa
     import matplotlib
 
     matplotlib.use("TkAgg")
@@ -540,7 +540,7 @@ class PeakLogicFiles:
             ip = self.fitting_math(xfile, yfile, 1)
 
             # check data quality
-            if ip < 0:
+            if ip < 0:  # noqa
                 ip = 0
             iplist.append(ip)
             self.app.bar.update(count)
@@ -605,7 +605,7 @@ class PeakLogicFiles:
                     passingx,
                 )
 
-        except Exception:
+        except Exception:  # noqa
             print("Error Fitting")
             print(sys.exc_info())
             return -1
@@ -629,7 +629,7 @@ class PeakLogicFiles:
                 if spot < high:
                     newx.append(spot)
                     newy.append(h)
-                else:
+                else:  # noqa
                     pass
             else:
                 pass
@@ -639,7 +639,7 @@ class PeakLogicFiles:
         py: numpy.ndarray = numpy.array(newy, dtype=numpy.float64)
         return px, py  # return partial x and partial y
 
-    def test_fit(self, dataind: int = 0) -> None:  # noqa
+    def test_fit(self, dataind: int = 0) -> None:
         """Perform a fit for the first data point and display it for
         the user."""
 
