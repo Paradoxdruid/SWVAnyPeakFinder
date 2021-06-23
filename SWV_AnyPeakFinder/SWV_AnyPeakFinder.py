@@ -25,13 +25,13 @@ from lmfit.models import LorentzianModel, LinearModel
 
 from . import __version__ as version
 
-if platform.system() == "Darwin":  # noqa
+if platform.system() == "Darwin":  # pragma: no cover
     import matplotlib
 
     matplotlib.use("TkAgg")
 
 
-class PointBrowser:
+class PointBrowser:  # pragma: no cover
     """This is the class that draws the main graph of data for Peak Finder.
 
     This class creates a line and point graph with clickable points.
@@ -122,7 +122,7 @@ class PointBrowser:
         plt.show()
 
 
-class PeakFinderApp(tkinter.Tk):
+class PeakFinderApp(tkinter.Tk):  # pragma: no cover
     """This is the gui for Peak Finder.
 
     This application displays a minimal user interface to select a
@@ -540,7 +540,7 @@ class PeakLogicFiles:
             ip = self.fitting_math(xfile, yfile, 1)
 
             # check data quality
-            if ip < 0:  # noqa
+            if ip < 0:  # pragma: no cover
                 ip = 0
             iplist.append(ip)
             self.app.bar.update(count)
@@ -605,7 +605,7 @@ class PeakLogicFiles:
                     passingx,
                 )
 
-        except Exception:  # noqa
+        except Exception:  # pragma: no cover
             print("Error Fitting")
             print(sys.exc_info())
             return -1
@@ -629,7 +629,7 @@ class PeakLogicFiles:
                 if spot < high:
                     newx.append(spot)
                     newy.append(h)
-                else:  # noqa
+                else:  # pragma: no cover
                     pass
             else:
                 pass
@@ -709,7 +709,7 @@ class PeakLogicFiles:
         file: str,
         ip: float,
         px: numpy.ndarray,
-    ) -> None:  # noqa
+    ) -> None:  # pragma: no cover
         """PeakLogic.test_grapher() displays a graph of the test fitting."""
 
         plt.close(2)  # close previous test if open
@@ -744,7 +744,7 @@ class PeakLogicFiles:
         plt.show()
 
 
-class ProgressBar:
+class ProgressBar:  # pragma: no cover
     """Create a tkinter Progress bar widget."""
 
     def __init__(
@@ -791,11 +791,11 @@ class ProgressBar:
         self.root.update()
 
 
-def main():
+def main():  # pragma: no cover
     """Entry point for gui script."""
-    _: PeakFinderApp = PeakFinderApp()  # noqa
+    _: PeakFinderApp = PeakFinderApp()
 
 
 # Main magic
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
