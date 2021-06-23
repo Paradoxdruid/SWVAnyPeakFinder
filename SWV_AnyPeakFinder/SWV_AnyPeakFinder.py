@@ -639,7 +639,7 @@ class PeakLogicFiles:
         py: numpy.ndarray = numpy.array(newy, dtype=numpy.float64)
         return px, py  # return partial x and partial y
 
-    def test_fit(self, dataind: int = 0) -> None:
+    def test_fit(self, dataind: int = 0) -> None:  # noqa
         """Perform a fit for the first data point and display it for
         the user."""
 
@@ -709,7 +709,7 @@ class PeakLogicFiles:
         file: str,
         ip: float,
         px: numpy.ndarray,
-    ) -> None:
+    ) -> None:  # noqa
         """PeakLogic.test_grapher() displays a graph of the test fitting."""
 
         plt.close(2)  # close previous test if open

@@ -78,6 +78,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # pyenv
 .python-version
@@ -109,6 +110,3 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
-# Tests in progress
-test_SWV_AnyPeakFinder.py
