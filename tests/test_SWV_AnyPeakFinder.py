@@ -1,9 +1,9 @@
 """Unit tests for SWV_AnyPeakFinder"""
 
 import numpy as np
+import SWV_AnyPeakFinder.SWV_AnyPeakFinder as swv
 from lmfit.models import LorentzianModel
 
-import SWV_AnyPeakFinder.SWV_AnyPeakFinder as swv
 import test_values
 
 
@@ -61,7 +61,7 @@ def test_PeakLogicFiles_fitting_math_flag_0(mocker):
     EXPECTED_X = test_values.EXPECTED_X_FITTING_MATH
     EXPECTED_Y = test_values.EXPECTED_Y_FITTING_MATH
     EXPECTED_BEST_FIT = test_values.EXPECTED_BEST_FIT_FITTING_MATH
-    EXPECTED_IP = 1.2011916245135e-06
+    EXPECTED_IP = 1.1715001756255807e-06
     EXPECTED_PEAK2 = test_values.EXPECTED_PEAK2_FITTING_MATH
 
     x, y, best_fit, _, _, peak2, ip, _ = logic.fitting_math(
@@ -81,7 +81,7 @@ def test_PeakLogicFiles_fitting_math_flag_1(mocker):
     TEST_Y_FILE = list(test_values.EXPECTED_Y_ARRAY)
     TEST_FLAG = 1
 
-    EXPECTED_IP = 1.2011916245135e-06
+    EXPECTED_IP = 1.1715001756255807e-06
 
     ip = logic.fitting_math(TEST_X_FILE, TEST_Y_FILE, flag=TEST_FLAG)
 
@@ -111,7 +111,7 @@ def test_PeakLogicFiles_peak_math(mocker):
     TEST_X_FILE = [(list(np.linspace(-0.7, 0, 200)))]
     TEST_Y_FILE = [(list(test_values.EXPECTED_Y_ARRAY))]
 
-    EXPECTED_IP_LIST = [1.2011916245135e-06]
+    EXPECTED_IP_LIST = [1.1715001756255807e-06]
     iplist = logic.peak_math(TEST_X_FILE, TEST_Y_FILE)
 
     assert EXPECTED_IP_LIST == iplist

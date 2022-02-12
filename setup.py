@@ -1,9 +1,10 @@
 """Setup module for SWV_AnyPeakFinder.
 """
 
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
 from pathlib import Path
+
+# Always prefer setuptools over distutils
+from setuptools import find_packages, setup
 
 import SWV_AnyPeakFinder.__version__ as version
 

@@ -17,13 +17,15 @@ import sys
 import tkinter
 from pathlib import Path
 from tkinter import filedialog, ttk
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Type
 
+import _csv
 import matplotlib.pyplot as plt
-import numpy
-from lmfit.models import LorentzianModel, LinearModel
+import numpy as np
+from argon2 import Parameters
+from lmfit.models import LinearModel, LorentzianModel
 
-from . import __version__ as version
+import SWV_AnyPeakFinder.__version__ as version
 
 if platform.system() == "Darwin":  # pragma: no cover
     import matplotlib
@@ -31,7 +33,7 @@ if platform.system() == "Darwin":  # pragma: no cover
     matplotlib.use("TkAgg")
 
 
-class PointBrowser:  # pragma: no cover
+class PointBrowser:
     """This is the class that draws the main graph of data for Peak Finder.
 
     This class creates a line and point graph with clickable points.
@@ -134,7 +136,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
 
         self.directory_manager()
         tkinter.Tk.__init__(self)
-        self.window_title = "SWV AnyPeakFinder {}".format(str(version.__version__))
+        self.window_title: str = "SWV AnyPeakFinder {}".format(str(version.__version__))
 
         # invoke PeakLogicFiles to do the actual work
         logic: "PeakLogicFiles" = PeakLogicFiles(self)
@@ -143,82 +145,82 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.title(self.window_title)
         self.geometry("+100+100")
         self.resizable(tkinter.FALSE, tkinter.FALSE)
-        mainframe = ttk.Frame(self)
+        mainframe: ttk.Frame = ttk.Frame(self)
         mainframe.grid(
             column=0,
             row=0,
-            sticky=(tkinter.N, tkinter.W, tkinter.E, tkinter.S),
+            sticky="NWES",  # (tkinter.N, tkinter.W, tkinter.E, tkinter.S),
             padx=5,
             pady=5,
         )
-        mainframe.columnconfigure(0, weight=1)
-        mainframe.rowconfigure(0, weight=1)
+        mainframe.columnconfigure(0, weight=1)  # type: ignore
+        mainframe.rowconfigure(0, weight=1)  # type: ignore
 
         # define our variables in tkinter-form and give sane defaults
-        self.filename_ = tkinter.StringVar(value="output1")
-        self.output = tkinter.StringVar()
+        self.filename_: tkinter.StringVar = tkinter.StringVar(value="output1")
+        self.output: tkinter.StringVar = tkinter.StringVar()
         self.filenames_: List[str] = []
-        self.dir_selected = tkinter.IntVar(value=0)
-        self.init_potential_ = tkinter.DoubleVar(value=-0.2)
-        self.final_potential_ = tkinter.DoubleVar(value=-0.4)
-        self.peak_center_ = tkinter.DoubleVar(value=-0.4)
-        self.final_edge_ = tkinter.DoubleVar(value=-1)
-        self.init_edge_ = tkinter.DoubleVar(value=-0.1)
-        self.guesses_ = None
+        self.dir_selected: tkinter.IntVar = tkinter.IntVar(value=0)
+        self.init_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.2)
+        self.final_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.4)
+        self.peak_center_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.4)
+        self.final_edge_: tkinter.DoubleVar = tkinter.DoubleVar(value=-1)
+        self.init_edge_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.1)
+        self.guesses_: None = None
 
         # display the entry boxes
         ttk.Label(mainframe, text=self.window_title, font="helvetica 12 bold").grid(
-            column=1, row=1, sticky=tkinter.W, columnspan=2
+            column=1, row=1, sticky="W", columnspan=2
         )
 
         ttk.Entry(mainframe, width=12, textvariable=self.filename_).grid(
-            column=2, row=2, sticky=(tkinter.W, tkinter.E)
+            column=2, row=2, sticky="WE"  # (tkinter.W, tkinter.E)
         )
-        ttk.Label(mainframe, text="Filename:").grid(column=1, row=2, sticky=tkinter.W)
+        ttk.Label(mainframe, text="Filename:").grid(column=1, row=2, sticky="W")
 
         ttk.Entry(mainframe, width=12, textvariable=self.peak_center_).grid(
-            column=2, row=9, sticky=(tkinter.W, tkinter.E)
+            column=2, row=9, sticky="WE"  # (tkinter.W, tkinter.E)
         )
         ttk.Label(mainframe, text="Peak Center:").grid(
-            column=1, row=9, sticky=tkinter.W
+            column=1, row=9, sticky="W"  # tkinter.W
         )
 
         ttk.Label(mainframe, text="Peak Location Guess", font="helvetica 10 bold").grid(
-            column=1, row=5, sticky=tkinter.W
+            column=1, row=5, sticky="W"  # tkinter.W
         )
         ttk.Label(mainframe, text="(only change if necessary)").grid(
-            column=1, row=6, sticky=tkinter.W
+            column=1, row=6, sticky="W"  # tkinter.W
         )
 
         # Display Generate button
         ttk.Button(mainframe, text="Find Peaks", command=logic.peakfinder).grid(
-            column=1, row=10, sticky=tkinter.W
+            column=1, row=10, sticky="W"
         )
 
         # Display test fit button
         ttk.Button(mainframe, text="Test fit", command=logic.test_fit).grid(
-            column=2, row=10, sticky=tkinter.W
+            column=2, row=10, sticky="W"
         )
 
         # Display Directory button
         ttk.Button(mainframe, text="Select Files", command=self.files_select).grid(
-            column=1, row=4, sticky=tkinter.W
+            column=1, row=4, sticky="W"
         )
 
         # Show the output
         ttk.Label(mainframe, textvariable=self.output).grid(
-            column=1, row=13, sticky=(tkinter.W, tkinter.E), columnspan=5
+            column=1, row=13, sticky="WE", columnspan=5
         )
 
         # Set up Outlier correction
         ttk.Label(mainframe, text="Regions to include (from -> to):").grid(
-            column=1, row=12, sticky=tkinter.W
+            column=1, row=12, sticky="W"
         )
         ttk.Entry(mainframe, width=12, textvariable=self.final_edge_).grid(
-            column=1, row=13, sticky=(tkinter.E)
+            column=1, row=13, sticky="E"
         )
         ttk.Entry(mainframe, width=12, textvariable=self.init_edge_).grid(
-            column=2, row=13, sticky=(tkinter.W, tkinter.E)
+            column=2, row=13, sticky="WE"
         )
 
         # Pad the windows for prettiness
@@ -229,22 +231,20 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.bar: "ProgressBar" = ProgressBar(mainframe, width=100, height=10)
         self.bar.update(0)
 
-        ttk.Label(mainframe, text="").grid(
-            column=1, row=16, sticky=(tkinter.W, tkinter.E)
-        )
+        ttk.Label(mainframe, text="").grid(column=1, row=16, sticky="WE")
 
         # add a system menu
         self.option_add("*tearOff", tkinter.FALSE)
 
-        self.menubar = tkinter.Menu(self)
+        self.menubar: tkinter.Menu = tkinter.Menu(self)
         self["menu"] = self.menubar
 
-        self.menu_file = tkinter.Menu(self.menubar)
+        self.menu_file: tkinter.Menu = tkinter.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.menu_file, label="File")
 
         self.menu_file.add_command(label="Exit", command=self.destroy)
 
-        self.menu_help = tkinter.Menu(self.menubar, name="help")
+        self.menu_help: tkinter.Menu = tkinter.Menu(self.menubar, name="help")
         self.menubar.add_cascade(menu=self.menu_help, label="Help")
 
         self.menu_help.add_command(label="How to Use", command=self.help_popup)
@@ -259,14 +259,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
     def directory_manager(self) -> None:
         """Set the initial directory to the users home directory."""
 
-        # if platform.system() == "Windows":
-        #     # import windows file management
-        #     from pathlib import Path
-
-        self.mydocs: Any = str(Path.home())
-        # else:
-        #     # import mac/linux file management
-        #     self.mydocs: Any = os.getenv("HOME")
+        self.mydocs: str = str(Path.home())
         os.chdir(self.mydocs)
 
     def about_popup(self) -> None:
@@ -277,22 +270,22 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.aboutDialog.geometry("+400+100")
 
         aboutframe = ttk.Frame(self.aboutDialog, width="200", height="200")
-        aboutframe.grid_propagate(0)
+        aboutframe.grid_propagate(False)
         aboutframe.grid(
             column=0,
             row=0,
-            sticky=(tkinter.N, tkinter.W, tkinter.E, tkinter.S),
+            sticky="NWES",
             padx=5,
             pady=5,
         )
-        aboutframe.columnconfigure(0, weight=1)
-        aboutframe.rowconfigure(0, weight=1)
+        aboutframe.columnconfigure(0, weight=1)  # type: ignore
+        aboutframe.rowconfigure(0, weight=1)  # type: ignore
         ttk.Label(
             aboutframe,
             text=self.window_title,
             font="helvetica 12 bold",
             anchor="center",
-        ).grid(column=0, row=0, sticky=(tkinter.N, tkinter.W, tkinter.E))
+        ).grid(column=0, row=0, sticky="NWE")
         ttk.Label(
             aboutframe,
             text=(
@@ -302,9 +295,9 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             ).format(str(version.__author__), str(version.__copyright__)),
             anchor="center",
             justify="center",
-        ).grid(column=0, row=1, sticky=tkinter.N)
+        ).grid(column=0, row=1, sticky="N")
         ttk.Button(aboutframe, text="Close", command=self.aboutDialog.destroy).grid(
-            column=0, row=4, sticky=(tkinter.S)
+            column=0, row=4, sticky="S"
         )
         self.aboutDialog.mainloop()
 
@@ -318,18 +311,18 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         helpframe.grid(
             column=0,
             row=0,
-            sticky=(tkinter.N, tkinter.W, tkinter.E, tkinter.S),
+            sticky="NWES",
             padx=5,
             pady=5,
         )
-        helpframe.columnconfigure(0, weight=1)
-        helpframe.rowconfigure(0, weight=1)
+        helpframe.columnconfigure(0, weight=1)  # type: ignore
+        helpframe.rowconfigure(0, weight=1)  # type: ignore
         ttk.Label(
             helpframe,
             text=("{} Help".format(self.window_title)),
             font="helvetica 12 bold",
             anchor="center",
-        ).grid(column=0, row=0, sticky=(tkinter.N, tkinter.W, tkinter.E))
+        ).grid(column=0, row=0, sticky="NWE")
         helptext = tkinter.Text(helpframe, width=40, height=9)
         helpmessage = (
             "Peak Finder is used to find the peak current for a "
@@ -361,25 +354,25 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.dataDialog.resizable(tkinter.FALSE, tkinter.FALSE)
         self.dataDialog.geometry("+400+100")
         dataframe = ttk.Frame(self.dataDialog, width="300", height="600")
-        dataframe.grid_propagate(0)
+        dataframe.grid_propagate(False)
         dataframe.grid(
             column=0,
             row=0,
-            sticky=(tkinter.N, tkinter.W, tkinter.E, tkinter.S),
+            sticky="NWES",
             padx=5,
             pady=5,
         )
-        dataframe.columnconfigure(0, weight=1)
-        dataframe.rowconfigure(0, weight=1)
+        dataframe.columnconfigure(0, weight=1)  # type: ignore
+        dataframe.rowconfigure(0, weight=1)  # type: ignore
         ttk.Label(
             dataframe,
             text="Data for {}".format(str(filename)),
             font="helvetica 12 bold",
             anchor="center",
-        ).grid(column=0, row=0, sticky=(tkinter.N, tkinter.W, tkinter.E))
+        ).grid(column=0, row=0, sticky="NWE")
 
         # Read the output data
-        self.df = csv.reader(open(filename), delimiter=",")
+        self.df: _csv._reader = csv.reader(open(filename), delimiter=",")
         listfile: List[List[str]] = list(self.df)
         data_formatter: List[str] = []
         for item in listfile:
@@ -388,10 +381,10 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
 
         # Display it
         self.datatext = tkinter.Text(dataframe, width=30, height=33)
-        self.datatext.grid(column=0, row=1, sticky=(tkinter.N, tkinter.W, tkinter.E))
+        self.datatext.grid(column=0, row=1, sticky="NWE")
         self.datatext.insert("1.0", data_output)
         ttk.Button(dataframe, text="Close", command=self.dataDialog.destroy).grid(
-            column=0, row=4, sticky=(tkinter.S)
+            column=0, row=4, sticky="S"
         )
         self.dataDialog.mainloop()
 
@@ -399,9 +392,9 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         """Allow user to select a directory where datafiles
         are located."""
 
-        filenamesRaw = filedialog.askopenfilenames(
+        filenamesRaw: List[str] = filedialog.askopenfilenames(
             title="Title", filetypes=[("CSV Files", "*.csv"), ("TXT Files", "*.txt")]
-        )
+        )  # type: ignore
         self.filenames_ = list(filenamesRaw)
         self.dir_selected.set(1)
 
@@ -444,8 +437,8 @@ class PeakLogicFiles:
             self.g.write("time,file,peak current\n")
 
             # run the peakfinder
-            printing_list: List
-            iplist: List
+            printing_list: List[int]
+            iplist: List[float]
             printing_list, iplist = self.loop_for_peaks_files(filenamesList)
 
         # Catch if peakfinder failed
@@ -476,9 +469,11 @@ class PeakLogicFiles:
 
         for each in filenamesList:  # loop through each file
             try:
-                dialect = csv.Sniffer().sniff(open(each).read(1024), delimiters="\t,")
+                dialect: Type[csv.Dialect] = csv.Sniffer().sniff(
+                    open(each).read(1024), delimiters="\t,"
+                )
                 open(each).seek(0)
-                self.f = csv.reader(open(each), dialect)
+                self.f: _csv._reader = csv.reader(open(each), dialect)
                 listfile: List[List[str]] = list(self.f)
                 t_list: List[int] = []
                 y_list: List[str] = []
@@ -549,7 +544,9 @@ class PeakLogicFiles:
         return iplist
 
     @staticmethod
-    def add_lz_peak(prefix, center, amplitude=0.005, sigma=0.05):
+    def add_lz_peak(
+        prefix: str, center: float, amplitude: float = 0.005, sigma: float = 0.05
+    ) -> Tuple[LorentzianModel, Parameters]:
         peak = LorentzianModel(prefix=prefix)
         pars = peak.make_params()
         pars[prefix + "center"].set(center)
@@ -557,18 +554,27 @@ class PeakLogicFiles:
         pars[prefix + "sigma"].set(sigma, min=0)
         return peak, pars
 
-    def fitting_math(self, xfile: List[str], yfile: List[str], flag: int = 1,) -> Any:
+    def fitting_math(
+        self,
+        xfile: List[str],
+        yfile: List[str],
+        flag: int = 1,
+    ) -> Any:
         """PeakLogic.fitting_math() fits the data to a cosh and a
         gaussian, then subtracts the cosh to find peak current.."""
 
         try:
             center: float = self.app.peak_center_.get()
-            x: numpy.ndarray = numpy.array(xfile, dtype=numpy.float64)
-            y: numpy.ndarray = numpy.array(yfile, dtype=numpy.float64)
+            x: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(
+                xfile, dtype=np.float64
+            )
+            y: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(
+                yfile, dtype=np.float64
+            )
 
             # cut out outliers
-            passingx: numpy.ndarray
-            passingy: numpy.ndarray
+            passingx: "np.ndarray[Any, np.dtype[np.float64]]"
+            passingy: "np.ndarray[Any, np.dtype[np.float64]]"
             passingx, passingy = self.trunc_edges(xfile, yfile)
 
             rough_peak_positions = [min(passingx), center]
@@ -611,8 +617,10 @@ class PeakLogicFiles:
             return -1
 
     def trunc_edges(
-        self, listx: numpy.ndarray, listy: numpy.ndarray
-    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
+        self, listx: List[str], listy: List[str]
+    ) -> Tuple[
+        "np.ndarray[Any, np.dtype[np.float64]]", "np.ndarray[Any, np.dtype[np.float64]]"
+    ]:
         """PeakLogic.trunc_edges() removes outlier regions of known
         bad signal from an x-y data list and returns the inner edges."""
 
@@ -635,8 +643,8 @@ class PeakLogicFiles:
                 pass
 
         # convert results back to an array
-        px: numpy.ndarray = numpy.array(newx, dtype=numpy.float64)
-        py: numpy.ndarray = numpy.array(newy, dtype=numpy.float64)
+        px: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(newx, dtype=np.float64)
+        py: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(newy, dtype=np.float64)
         return px, py  # return partial x and partial y
 
     def test_fit(self, dataind: int = 0) -> None:
@@ -648,13 +656,13 @@ class PeakLogicFiles:
             try:
                 filenamesList: List[str] = self.app.filenames_
                 file: str = filenamesList[dataind]
-                dialect: Any = csv.Sniffer().sniff(
+                dialect: Type[csv.Dialect] = csv.Sniffer().sniff(
                     open(file).read(1024), delimiters="\t,"
                 )
 
                 open(file).seek(0)  # open the first data file
-                self.testfile: Any = csv.reader(open(file), dialect)
-                listfile: List[str] = list(self.testfile)
+                self.testfile: _csv._reader = csv.reader(open(file), dialect)
+                listfile: List[List[str]] = list(self.testfile)
 
                 # remove the header rows from the file, leaving just the data
                 start_pattern: int = 3
@@ -665,7 +673,7 @@ class PeakLogicFiles:
                                 start_pattern = index
                     except IndexError:
                         pass
-                datalist: List[str] = listfile[start_pattern + 2 :]
+                datalist: List[List[str]] = listfile[start_pattern + 2 :]
 
                 x_list: List[str] = []
                 y_list: List[str] = []
@@ -680,14 +688,14 @@ class PeakLogicFiles:
                         else:
                             pass
 
-                x: numpy.ndarray
-                y: numpy.ndarray
-                y_fp: numpy.ndarray
-                y_bkg: numpy.ndarray
-                y_peak1: numpy.ndarray
-                y_peak2: numpy.ndarray
+                x: "np.ndarray[Any, np.dtype[np.float64]]"
+                y: "np.ndarray[Any, np.dtype[np.float64]]"
+                y_fp: "np.ndarray[Any, np.dtype[np.float64]]"
+                y_bkg: "np.ndarray[Any, np.dtype[np.float64]]"
+                y_peak1: "np.ndarray[Any, np.dtype[np.float64]]"
+                y_peak2: "np.ndarray[Any, np.dtype[np.float64]]"
                 ip: float
-                px: numpy.ndarray
+                px: "np.ndarray[Any, np.dtype[np.float64]]"
                 x, y, y_fp, y_bkg, y_peak1, y_peak2, ip, px = self.fitting_math(
                     x_list, y_list, flag=0
                 )
@@ -700,21 +708,22 @@ class PeakLogicFiles:
 
     def test_grapher(
         self,
-        x: numpy.ndarray,
-        y: numpy.ndarray,
-        y_fp: numpy.ndarray,
-        y_bkg: numpy.ndarray,
-        y_peak1: numpy.ndarray,
-        y_peak2: numpy.ndarray,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_fp: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_bkg: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_peak1: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_peak2: "np.ndarray[Any, np.dtype[np.float64]]",
         file: str,
         ip: float,
-        px: numpy.ndarray,
+        px: "np.ndarray[Any, np.dtype[np.float64]]",
     ) -> None:  # pragma: no cover
         """PeakLogic.test_grapher() displays a graph of the test fitting."""
 
         plt.close(2)  # close previous test if open
 
-        full_bkg = y_bkg + y_peak1  # add background components
+        # add background components
+        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg + y_peak1
 
         file_name: str = os.path.basename(file)
         self.fig2 = plt.figure(2)
@@ -748,7 +757,11 @@ class ProgressBar:  # pragma: no cover
     """Create a tkinter Progress bar widget."""
 
     def __init__(
-        self, root: Any, width: float = 100, height: float = 10, maxval: float = 100
+        self,
+        root: ttk.Frame,
+        width: float = 100,
+        height: float = 10,
+        maxval: float = 100,
     ) -> None:
         """Initialize ProgressBar to make the tkinter progressbar."""
 
@@ -758,19 +771,19 @@ class ProgressBar:  # pragma: no cover
             self.root,
             width=width,
             height=height,
-            highlightt=0,
+            highlightthickness=0,
             relief="ridge",
             borderwidth=2,
         )
         self.canvas.create_rectangle(0, 0, 0, 0, fill="blue")
-        ttk.Label(self.root, text="Progress:").grid(column=1, row=14, sticky=tkinter.W)
-        self.canvas.grid(column=1, row=15, sticky=(tkinter.W, tkinter.E), columnspan=3)
+        ttk.Label(self.root, text="Progress:").grid(column=1, row=14, sticky="W")
+        self.canvas.grid(column=1, row=15, sticky="WE", columnspan=3)
 
     def set_maxval(self, maxval: float) -> None:
         """ProgressBar.set_maxval() sets the max value of the
         progressbar."""
 
-        self.maxval: float = float(maxval)
+        self.maxval = float(maxval)
 
     def update(self, value: float = 0) -> None:
         """ProgressBar.update() updates the progressbar to a specified
@@ -791,9 +804,9 @@ class ProgressBar:  # pragma: no cover
         self.root.update()
 
 
-def main():  # pragma: no cover
+def main() -> None:  # pragma: no cover
     """Entry point for gui script."""
-    _: PeakFinderApp = PeakFinderApp()
+    PeakFinderApp()
 
 
 # Main magic

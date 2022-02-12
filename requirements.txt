@@ -1,4 +1,0 @@
-lmfit
-numpy
-scipy
-matplotlib
