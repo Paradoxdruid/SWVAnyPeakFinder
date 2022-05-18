@@ -22,7 +22,6 @@ from typing import Any, List, Tuple, Type
 import _csv
 import matplotlib.pyplot as plt
 import numpy as np
-from argon2 import Parameters
 from lmfit.models import LinearModel, LorentzianModel
 
 import SWV_AnyPeakFinder.__version__ as version
@@ -546,7 +545,7 @@ class PeakLogicFiles:
     @staticmethod
     def add_lz_peak(
         prefix: str, center: float, amplitude: float = 0.005, sigma: float = 0.05
-    ) -> Tuple[LorentzianModel, Parameters]:
+    ) -> Tuple[LorentzianModel, Any]:
         peak = LorentzianModel(prefix=prefix)
         pars = peak.make_params()
         pars[prefix + "center"].set(center)

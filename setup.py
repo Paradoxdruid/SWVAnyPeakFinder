@@ -37,7 +37,7 @@ setup(
     ],
     keywords="voltammetry, biosensor, science",
     python_requires=">=3.6",
-    install_requires=["numpy", "scipy", "matplotlib"],
+    install_requires=["numpy", "scipy", "matplotlib", "lmfit"],
     entry_points={
         "gui_scripts": ["swv_anypeakfinder = SWV_AnyPeakFinder.SWV_AnyPeakFinder:main"],
     },
