@@ -1,34 +1,35 @@
-"""Unit tests for SWV_AnyPeakFinder"""
+"""Unit tests for SWV_AnyPeakFinder.logic"""
 
 import numpy as np
-import SWV_AnyPeakFinder.SWV_AnyPeakFinder as swv
+import SWV_AnyPeakFinder.gui as gui
+import SWV_AnyPeakFinder.logic as logic
 from lmfit.models import LorentzianModel
 
 import test_values
 
 
 def setup_PeakFinderApp(mocker):
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
+    mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
+    app = gui.PeakFinderApp()
     app.peak_center_.get.return_value = -0.4
     app.final_edge_.get.return_value = -0.6
     app.init_edge_.get.return_value = -0.1
-    logic = swv.PeakLogicFiles(app)
+    logic2 = logic.PeakLogicFiles(app)
 
-    return logic
+    return logic2
 
 
 def test_PeakLogicFiles_trunc_edges(mocker):
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
+    mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
+    app = gui.PeakFinderApp()
     app.final_edge_.get.return_value = -0.9
     app.init_edge_.get.return_value = -0.5
 
     TEST_X = np.array([-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4])
     TEST_Y = np.array([1, 2, 3, 4, 5, 6, 7])
     EXPECTED = (np.array([-0.8, -0.7, -0.6]), np.array([3, 4, 5]))
-    logic = swv.PeakLogicFiles(app)
-    actual = logic.trunc_edges(TEST_X, TEST_Y)
+    logic2 = logic.PeakLogicFiles(app)
+    actual = logic2.trunc_edges(TEST_X, TEST_Y)
 
     np.testing.assert_array_equal(EXPECTED, actual)
     # assert (EXPECTED == actual).all()
@@ -42,11 +43,11 @@ def test_PeakLogicFiles_add_lz_peak(mocker):
         center=-0.4, amplitude=0.005, sigma=0.05
     )
 
-    mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
-    app = swv.PeakFinderApp()
-    logic = swv.PeakLogicFiles(app)
+    mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
+    app = gui.PeakFinderApp()
+    logic2 = logic.PeakLogicFiles(app)
 
-    _, actual_params = logic.add_lz_peak(TEST_PREFIX, TEST_CENTER)
+    _, actual_params = logic2.add_lz_peak(TEST_PREFIX, TEST_CENTER)
     # assert EXPECTED_PEAK == actual_peak  # FIXME
     assert EXPECTED_PARAMS == actual_params
 
