@@ -13,6 +13,7 @@ import csv
 import os
 import re
 import sys
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 import _csv
@@ -22,6 +23,17 @@ from lmfit.models import LinearModel, LorentzianModel
 
 if TYPE_CHECKING:  # pragma: no cover
     from .gui import PeakFinderApp
+
+
+@dataclass
+class FitResults:
+    """Dataclass for holding fit result parameters."""
+
+    model: str
+    result: Any
+    background: Any
+    ip: float
+    chisqr: float
 
 
 class PeakLogicFiles:
@@ -192,8 +204,9 @@ class PeakLogicFiles:
         yfile: List[str],
         flag: int = 1,
     ) -> Any:
-        """PeakLogic.fitting_math() fits the data to a cosh and a
-        gaussian, then subtracts the cosh to find peak current.."""
+        """PeakLogic.fitting_math() fits the data to linear background
+        with a water and methylene blue peak, then subtracts water peak and
+        linear slope to find peak current.."""
 
         try:
             center: float = self.app.peak_center_.get()
@@ -209,37 +222,22 @@ class PeakLogicFiles:
             passingy: "np.ndarray[Any, np.dtype[np.float64]]"
             passingx, passingy = self.trunc_edges(xfile, yfile)
 
-            rough_peak_positions = [min(passingx), center]
+            # Test different models
+            # https://lmfit-py.readthedocs.io/en/0.9.0/builtin_models.html
 
-            min_y = float(min(passingy))
-            model = LinearModel(prefix="Background")
-            params = model.make_params()  # a=0, b=0, c=0
-            params.add("slope", 0, min=0)
-            # params.add("b", 0, min=0)
-            params.add("intercept", 0, min=min_y)
-
-            for i, cen in enumerate(rough_peak_positions):
-                peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
-                model = model + peak
-                params.update(pars)
-
-            _ = model.eval(params, x=passingx)
-            result = model.fit(passingy, params, x=passingx)
-            comps = result.eval_components()
-
-            ip = float(max(comps["Peak_2"]))
+            model = self._return_best_model(passingx, passingy, center)
 
             if flag == 1:
-                return ip
+                return model.ip
             if flag == 0:
                 return (
                     x,
                     y,
-                    result.best_fit,
-                    comps["Background"],
-                    comps["Peak_1"],
-                    comps["Peak_2"],
-                    ip,
+                    model.result.best_fit,
+                    model.background,
+                    # comps["Background"],
+                    # comps["Peak_1"],
+                    model.ip,
                     passingx,
                 )
 
@@ -247,6 +245,111 @@ class PeakLogicFiles:
             print("Error Fitting")
             print(sys.exc_info())
             return -1
+
+    def _return_best_model(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        center: float,
+    ) -> FitResults:
+
+        models = [self._one_peak_model, self._two_peak_model, self._three_peak_model]
+
+        outcomes = [each(x, y, center) for each in models]
+
+        # Find minimum chisqr and return that model
+        best_model = min(outcomes, key=lambda x: x.chisqr)
+
+        return best_model
+
+    def _one_peak_model(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        center: float,
+    ) -> Any:
+        rough_peak_positions = [center]
+
+        min_y = float(min(y))
+        model = LinearModel(prefix="Background")
+        params = model.make_params()  # a=0, b=0, c=0
+        params.add("slope", 0, min=0)
+        params.add("intercept", 0, min=min_y)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            model = model + peak
+            params.update(pars)
+
+        _ = model.eval(params, x=x)
+        result = model.fit(y, params, x=x)
+        comps = result.eval_components()
+
+        ip = float(max(comps["Peak_1"]))
+
+        model = FitResults("linear", result, comps["Background"], ip, result.chisqr)
+
+        return model
+
+    def _two_peak_model(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        center: float,
+    ) -> Any:
+        rough_peak_positions = [min(x), center]
+
+        min_y = float(min(y))
+        model = LinearModel(prefix="Background")
+        params = model.make_params()  # a=0, b=0, c=0
+        params.add("slope", 0, min=0)
+        params.add("intercept", 0, min=min_y)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            model = model + peak
+            params.update(pars)
+
+        _ = model.eval(params, x=x)
+        result = model.fit(y, params, x=x)
+        comps = result.eval_components()
+
+        ip = float(max(comps["Peak_2"]))
+        background = comps["Background"] + comps["Peak_1"]
+
+        model = FitResults("one shoulder", result, background, ip, result.chisqr)
+
+        return model
+
+    def _three_peak_model(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        center: float,
+    ) -> Any:
+        rough_peak_positions = [min(x), center, max(x)]
+
+        min_y = float(min(y))
+        model = LinearModel(prefix="Background")
+        params = model.make_params()  # a=0, b=0, c=0
+        params.add("slope", 0, min=0)
+        params.add("intercept", 0, min=min_y)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            model = model + peak
+            params.update(pars)
+
+        _ = model.eval(params, x=x)
+        result = model.fit(y, params, x=x)
+        comps = result.eval_components()
+
+        ip = float(max(comps["Peak_2"]))
+        background = comps["Background"] + comps["Peak_1"] + comps["Peak_3"]
+
+        model = FitResults("one shoulder", result, background, ip, result.chisqr)
+
+        return model
 
     def trunc_edges(
         self, listx: List[str], listy: List[str]
@@ -324,14 +427,13 @@ class PeakLogicFiles:
                 y: "np.ndarray[Any, np.dtype[np.float64]]"
                 y_fp: "np.ndarray[Any, np.dtype[np.float64]]"
                 y_bkg: "np.ndarray[Any, np.dtype[np.float64]]"
-                y_peak1: "np.ndarray[Any, np.dtype[np.float64]]"
-                y_peak2: "np.ndarray[Any, np.dtype[np.float64]]"
+                # y_peak1: "np.ndarray[Any, np.dtype[np.float64]]"
+                # y_peak2: "np.ndarray[Any, np.dtype[np.float64]]"
                 ip: float
                 px: "np.ndarray[Any, np.dtype[np.float64]]"
-                x, y, y_fp, y_bkg, y_peak1, y_peak2, ip, px = self.fitting_math(
-                    x_list, y_list, flag=0
-                )
-                self.test_grapher(x, y, y_fp, y_bkg, y_peak1, y_peak2, file, ip, px)
+
+                x, y, y_fp, y_bkg, ip, px = self.fitting_math(x_list, y_list, flag=0)
+                self.test_grapher(x, y, y_fp, y_bkg, file, ip, px)
 
             except (ValueError, IndexError):
                 pass
@@ -344,8 +446,8 @@ class PeakLogicFiles:
         y: "np.ndarray[Any, np.dtype[np.float64]]",
         y_fp: "np.ndarray[Any, np.dtype[np.float64]]",
         y_bkg: "np.ndarray[Any, np.dtype[np.float64]]",
-        y_peak1: "np.ndarray[Any, np.dtype[np.float64]]",
-        y_peak2: "np.ndarray[Any, np.dtype[np.float64]]",
+        # y_peak1: "np.ndarray[Any, np.dtype[np.float64]]",
+        # y_peak2: "np.ndarray[Any, np.dtype[np.float64]]",
         file: str,
         ip: float,
         px: "np.ndarray[Any, np.dtype[np.float64]]",
@@ -355,7 +457,8 @@ class PeakLogicFiles:
         plt.close(2)  # close previous test if open
 
         # add background components
-        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg + y_peak1
+        # FIXME: assumes given shape
+        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg  # + y_peak1
 
         file_name: str = os.path.basename(file)
         self.fig2 = plt.figure(2)
@@ -365,7 +468,7 @@ class PeakLogicFiles:
         self.ax2.plot(px, full_bkg, label="background")
         # self.ax2.plot(px, y_bkg, label="background")
         # self.ax2.plot(px, y_peak1, label="peak 1")
-        self.ax2.plot(px, y_peak2, label="methylene blue")
+        # self.ax2.plot(px, y_peak2, label="methylene blue")
         self.ax2.set_xlabel("Potential (V)")
         self.ax2.set_ylabel("Current (A)")
         self.ax2.set_title("Fit of {}".format(str(file_name)))

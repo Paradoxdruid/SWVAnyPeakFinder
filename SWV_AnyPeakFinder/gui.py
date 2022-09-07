@@ -70,7 +70,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.dir_selected: tkinter.IntVar = tkinter.IntVar(value=0)
         self.init_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.2)
         self.final_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.4)
-        self.peak_center_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.4)
+        self.peak_center_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.3)
         self.final_edge_: tkinter.DoubleVar = tkinter.DoubleVar(value=-1)
         self.init_edge_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.1)
         self.guesses_: None = None
@@ -158,10 +158,6 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.menu_help.add_command(
             label="About Peak Finder...", command=self.about_popup
         )
-
-        # Run the program
-        plt.show()
-        self.mainloop()
 
     def directory_manager(self) -> None:
         """Set the initial directory to the users home directory."""
@@ -260,7 +256,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         self.dataDialog = tkinter.Toplevel(self)
         self.dataDialog.resizable(tkinter.FALSE, tkinter.FALSE)
         self.dataDialog.geometry("+400+100")
-        dataframe = ttk.Frame(self.dataDialog, width="300", height="600")
+        dataframe = ttk.Frame(self.dataDialog, width="600", height="600")
         dataframe.grid_propagate(False)
         dataframe.grid(
             column=0,
@@ -371,7 +367,7 @@ class PointBrowser:  # pragma: no cover
         self.axb = plt.axes([0.75, 0.03, 0.15, 0.05])
         self.button = plt.Button(self.axb, "Results")
         # self.ax.plot._test = self.button
-        # self.button.on_clicked(self.app.data_popup)
+        self.button.on_clicked(self.app.data_popup)
 
         # Draw the figure
         self.fig.canvas.draw()
