@@ -19,10 +19,10 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 import _csv
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import LinearModel, LorentzianModel
+from lmfit.models import ConstantModel, LorentzianModel
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .gui import PeakFinderApp
+    from SWV_AnyPeakFinder.gui import PeakFinderApp
 
 
 @dataclass
@@ -189,7 +189,7 @@ class PeakLogicFiles:
 
     @staticmethod
     def add_lz_peak(
-        prefix: str, center: float, amplitude: float = 0.005, sigma: float = 0.05
+        prefix: str, center: float, amplitude: float = 0.000005, sigma: float = 0.05
     ) -> Tuple[LorentzianModel, Any]:
         peak = LorentzianModel(prefix=prefix)
         pars = peak.make_params()
@@ -253,7 +253,7 @@ class PeakLogicFiles:
         center: float,
     ) -> FitResults:
 
-        models = [self._one_peak_model, self._two_peak_model, self._three_peak_model]
+        models = [self._one_peak_model, self._two_peak_model]
 
         outcomes = [each(x, y, center) for each in models]
 
@@ -270,11 +270,15 @@ class PeakLogicFiles:
     ) -> Any:
         rough_peak_positions = [center]
 
-        min_y = float(min(y))
-        model = LinearModel(prefix="Background")
-        params = model.make_params()  # a=0, b=0, c=0
-        params.add("slope", 0, min=0)
-        params.add("intercept", 0, min=min_y)
+        # min_y = float(min(y))
+        # model = LinearModel(prefix="Background")
+        # params = model.make_params()  # a=0, b=0, c=0
+        # params.add("slope", 0)  # , min=0)
+        # params.add("intercept", 0, min=max([0, min_y]))
+
+        model = ConstantModel(prefix="Background")
+        params = model.make_params()
+        params.add("c", 0, min=0)  # , min=0)
 
         for i, cen in enumerate(rough_peak_positions):
             peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
@@ -299,11 +303,15 @@ class PeakLogicFiles:
     ) -> Any:
         rough_peak_positions = [min(x), center]
 
-        min_y = float(min(y))
-        model = LinearModel(prefix="Background")
-        params = model.make_params()  # a=0, b=0, c=0
-        params.add("slope", 0, min=0)
-        params.add("intercept", 0, min=min_y)
+        # min_y = float(min(y))
+        # model = LinearModel(prefix="Background")
+        # params = model.make_params()  # a=0, b=0, c=0
+        # params.add("slope", 0)  # , min=0)
+        # params.add("intercept", 0, min=max([0, min_y]))
+
+        model = ConstantModel(prefix="Background")
+        params = model.make_params()
+        params.add("c", 0, min=0)  # , min=0)
 
         for i, cen in enumerate(rough_peak_positions):
             peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
@@ -329,11 +337,15 @@ class PeakLogicFiles:
     ) -> Any:
         rough_peak_positions = [min(x), center, max(x)]
 
-        min_y = float(min(y))
-        model = LinearModel(prefix="Background")
-        params = model.make_params()  # a=0, b=0, c=0
-        params.add("slope", 0, min=0)
-        params.add("intercept", 0, min=min_y)
+        # min_y = float(min(y))
+        # model = LinearModel(prefix="Background")
+        # params = model.make_params()  # a=0, b=0, c=0
+        # params.add("slope", 0)  # , min=0)
+        # params.add("intercept", 0, min=max([0, min_y]))
+
+        model = ConstantModel(prefix="Background")
+        params = model.make_params()
+        params.add("c", 0, min=0)  # , min=0)
 
         for i, cen in enumerate(rough_peak_positions):
             peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)

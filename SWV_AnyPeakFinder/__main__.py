@@ -1,4 +1,4 @@
-from . import gui
+from SWV_AnyPeakFinder import gui
 
 if __name__ == "__main__":  # pragma: no cover
     app = gui.PeakFinderApp()

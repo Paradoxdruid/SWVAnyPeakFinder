@@ -22,8 +22,8 @@ from typing import Any, List, Tuple
 import _csv
 import matplotlib.pyplot as plt
 
-from .__version__ import __author__, __copyright__, __version__
-from .logic import PeakLogicFiles
+from SWV_AnyPeakFinder.__version__ import __author__, __copyright__, __version__
+from SWV_AnyPeakFinder.logic import PeakLogicFiles
 
 if platform.system() == "Darwin":  # pragma: no cover
     import matplotlib
