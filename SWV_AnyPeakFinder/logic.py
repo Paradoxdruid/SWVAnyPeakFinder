@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 import _csv
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import ConstantModel, LorentzianModel
+from lmfit.models import ConstantModel, LorentzianModel, QuadraticModel
 
 if TYPE_CHECKING:  # pragma: no cover
     from SWV_AnyPeakFinder.gui import PeakFinderApp
@@ -235,8 +235,6 @@ class PeakLogicFiles:
                     y,
                     model.result.best_fit,
                     model.background,
-                    # comps["Background"],
-                    # comps["Peak_1"],
                     model.ip,
                     passingx,
                 )
@@ -253,7 +251,7 @@ class PeakLogicFiles:
         center: float,
     ) -> FitResults:
 
-        models = [self._one_peak_model, self._two_peak_model]
+        models = [self._one_peak_model, self._two_peak_model, self._quadratic_model]
 
         outcomes = [each(x, y, center) for each in models]
 
@@ -303,12 +301,6 @@ class PeakLogicFiles:
     ) -> Any:
         rough_peak_positions = [min(x), center]
 
-        # min_y = float(min(y))
-        # model = LinearModel(prefix="Background")
-        # params = model.make_params()  # a=0, b=0, c=0
-        # params.add("slope", 0)  # , min=0)
-        # params.add("intercept", 0, min=max([0, min_y]))
-
         model = ConstantModel(prefix="Background")
         params = model.make_params()
         params.add("c", 0, min=0)  # , min=0)
@@ -329,6 +321,37 @@ class PeakLogicFiles:
 
         return model
 
+    def _quadratic_model(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        center: float,
+    ) -> Any:
+        rough_peak_positions = [center]
+
+        min_y = float(min(y))
+        model = QuadraticModel(prefix="Background")
+        params = model.make_params()  # a=0, b=0, c=0
+        params.add("a", 0.000001, min=0)
+        params.add("b", 0.000001, min=0)
+        params.add("c", 0.000005, min=max([0, min_y]))
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            model = model + peak
+            params.update(pars)
+
+        _ = model.eval(params, x=x)
+        result = model.fit(y, params, x=x)
+        comps = result.eval_components()
+
+        ip = float(max(comps["Peak_1"]))
+        background = comps["Background"]
+
+        model = FitResults("quadratic", result, background, ip, result.chisqr)
+
+        return model
+
     def _three_peak_model(
         self,
         x: "np.ndarray[Any, np.dtype[np.float64]]",
@@ -336,12 +359,6 @@ class PeakLogicFiles:
         center: float,
     ) -> Any:
         rough_peak_positions = [min(x), center, max(x)]
-
-        # min_y = float(min(y))
-        # model = LinearModel(prefix="Background")
-        # params = model.make_params()  # a=0, b=0, c=0
-        # params.add("slope", 0)  # , min=0)
-        # params.add("intercept", 0, min=max([0, min_y]))
 
         model = ConstantModel(prefix="Background")
         params = model.make_params()
@@ -359,7 +376,7 @@ class PeakLogicFiles:
         ip = float(max(comps["Peak_2"]))
         background = comps["Background"] + comps["Peak_1"] + comps["Peak_3"]
 
-        model = FitResults("one shoulder", result, background, ip, result.chisqr)
+        model = FitResults("two shoulders", result, background, ip, result.chisqr)
 
         return model
 
