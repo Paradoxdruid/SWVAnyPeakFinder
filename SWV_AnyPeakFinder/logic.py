@@ -19,7 +19,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 import _csv
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import ConstantModel, LorentzianModel, QuadraticModel
+from lmfit import Parameters
+from lmfit.models import ConstantModel, LinearModel, LorentzianModel, QuadraticModel
 
 if TYPE_CHECKING:  # pragma: no cover
     from SWV_AnyPeakFinder.gui import PeakFinderApp
@@ -191,12 +192,20 @@ class PeakLogicFiles:
     def add_lz_peak(
         prefix: str, center: float, amplitude: float = 0.000005, sigma: float = 0.05
     ) -> Tuple[LorentzianModel, Any]:
+        """Generate a reasonable Lorenzian peak for model fitting."""
         peak = LorentzianModel(prefix=prefix)
         pars = peak.make_params()
         pars[prefix + "center"].set(center)
         pars[prefix + "amplitude"].set(amplitude, min=0)
         pars[prefix + "sigma"].set(sigma, min=0)
         return peak, pars
+
+    @staticmethod
+    def get_r2(
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+    ) -> "np.ndarray[Any, np.dtype[np.float64]]":
+        return np.corrcoef(x, y)[0, 1] ** 2
 
     def fitting_math(
         self,
@@ -250,15 +259,75 @@ class PeakLogicFiles:
         y: "np.ndarray[Any, np.dtype[np.float64]]",
         center: float,
     ) -> FitResults:
+        """Evaluate multiple models for peak fitting and return best fit model."""
 
-        models = [self._one_peak_model, self._two_peak_model, self._quadratic_model]
+        models = [
+            self._quadratic_model,
+            self._one_peak_model,
+            # self._two_peak_model,
+            # self._three_peak_model,
+        ]
+
+        # , self._two_peak_model,
 
         outcomes = [each(x, y, center) for each in models]
 
         # Find minimum chisqr and return that model
-        best_model = min(outcomes, key=lambda x: x.chisqr)
+        best_model: FitResults = min(outcomes, key=lambda x: x.chisqr)
+        # best_model = self.pick_best_outcome(outcomes, x, y)
 
         return best_model
+
+    def pick_best_outcome(
+        self,
+        outcomes: List[FitResults],
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+    ) -> FitResults:
+        """Evaluate a set of models for best r^2 value"""
+        result_tuples: List[
+            Tuple["np.ndarray[Any, np.dtype[np.float64]]", FitResults]
+        ] = []
+
+        for each in outcomes:
+            pcenter = each.result.values["Peak_1center"]
+            psigma = each.result.values["Peak_1sigma"]
+            pleft = pcenter - (2 * psigma)
+            pright = pcenter + (2 * psigma)
+
+            bkg_x_left = [i for i in x if i < pleft]
+            bkg_x_right = [i for i in x if i > pright]
+            # bkg_x = bkg_x_left + bkg_x_right
+
+            y1 = y[: len(bkg_x_left)]
+            y2 = y[-len(bkg_x_right) :]
+
+            bkg_y = np.concatenate((y1, y2))
+
+            f_y_1 = each.background[: len(bkg_x_left)]
+            f_y_2 = each.background[-len(bkg_x_right) :]
+            fit_y = np.concatenate((f_y_1, f_y_2))
+
+            # print(f"Bkg: {len(bkg_y)}, Fit: {len(fit_y)}")
+            r2 = self.get_r2(bkg_y, fit_y)
+
+            result_tuples.append((r2, each))
+
+        best = max(result_tuples, key=lambda x: x[0])  # type: ignore
+
+        return best[1]
+
+    @staticmethod
+    def _create_linear_background() -> Tuple[LinearModel, Parameters]:
+        model = LinearModel(prefix="Background")
+        params = model.make_params()
+        params.add("Backgroundslope", 0)  # , min=0)
+        params.add("Backgroundintercept", 0, min=0)
+
+        # model = ConstantModel(prefix="Background")
+        # params = model.make_params()
+        # params.add("Backgroundc", 0, min=0)
+        return model, params
 
     def _one_peak_model(
         self,
@@ -268,28 +337,77 @@ class PeakLogicFiles:
     ) -> Any:
         rough_peak_positions = [center]
 
-        # min_y = float(min(y))
-        # model = LinearModel(prefix="Background")
-        # params = model.make_params()  # a=0, b=0, c=0
-        # params.add("slope", 0)  # , min=0)
-        # params.add("intercept", 0, min=max([0, min_y]))
-
-        model = ConstantModel(prefix="Background")
-        params = model.make_params()
-        params.add("c", 0, min=0)  # , min=0)
+        # model, params = self._create_linear_background()
+        min_y = float(min(y))
+        model = LinearModel(prefix="Background")
+        params = model.make_params()  # a=0, b=0, c=0
+        params.add("Backgroundslope", 0)  # , min=0)
+        params.add("Backgroundintercept", 0, min=max([0, min_y]))
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen, (max(y) - min(y)))
             model = model + peak
             params.update(pars)
 
-        _ = model.eval(params, x=x)
         result = model.fit(y, params, x=x)
-        comps = result.eval_components()
 
-        ip = float(max(comps["Peak_1"]))
+        # Now, correct for edge affects
+        pcenter = result.values["Peak_1center"]
+        psigma = result.values["Peak_1sigma"]
+        pleft = pcenter - (2 * psigma)
+        pright = pcenter + (2 * psigma)
 
-        model = FitResults("linear", result, comps["Background"], ip, result.chisqr)
+        bkg_x_left = [i for i in x if i < pleft]
+        if len(bkg_x_left) == 0:
+            bkg_x_left = list(x[:10])
+        bkg_x_right = [i for i in x if i > pright]
+        if len(bkg_x_right) == 0:
+            bkg_x_right = list(x[-10:])
+        bkg_x = list(bkg_x_left) + list(bkg_x_right)
+        bkg_y = list(y[: len(bkg_x_left)]) + list(y[-len(bkg_x_right) :])
+
+        # print(f"One-peak, x length = {len(bkg_x)}, y length = {len(bkg_y)}")
+
+        rough_peak_positions = [pcenter]
+        edge_model = LinearModel(prefix="Background")
+        edge_params = edge_model.make_params()
+
+        edge_result = edge_model.fit(data=bkg_y, params=edge_params, x=bkg_x)
+
+        # Refit with fixed background
+
+        rough_peak_positions = [pcenter]
+        final_model = LinearModel(prefix="Background")
+        final_params = final_model.make_params()
+        final_params.add(
+            "Backgroundslope", edge_result.best_values["Backgroundslope"], vary=False
+        )
+        final_params.add(
+            "Backgroundintercept",
+            edge_result.best_values["Backgroundintercept"],
+            vary=False,
+        )
+        # params.add("Backgrounda", edge_result.best_values["Backgrounda"], vary=False)
+        # params.add("Backgroundb", edge_result.best_values["Backgroundb"], vary=False)
+        # params.add("Backgroundc", edge_result.best_values["Backgroundc"], vary=False)
+        # params.add("Baselinec", edge_result.best_values["Baselinec"], vary=False)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", center)
+            final_model = final_model + peak
+            final_params.update(pars)
+
+        # _ = final_model.eval(params, x=x)
+        final_result = final_model.fit(y, final_params, x=x)
+        final_comps = final_result.eval_components()
+
+        # final_result.params.pretty_print()
+
+        ip = float(max(final_comps["Peak_1"]))
+
+        model = FitResults(
+            "linear", final_result, final_comps["Background"], ip, final_result.chisqr
+        )
 
         return model
 
@@ -303,21 +421,62 @@ class PeakLogicFiles:
 
         model = ConstantModel(prefix="Background")
         params = model.make_params()
-        params.add("c", 0, min=0)  # , min=0)
+        params.add("Backgroundc", 0, min=0)
+
+        # model, params = self._create_linear_background()
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen, (max(y) - min(y)))
             model = model + peak
             params.update(pars)
 
         _ = model.eval(params, x=x)
         result = model.fit(y, params, x=x)
-        comps = result.eval_components()
+        # comps = result.eval_components()
 
-        ip = float(max(comps["Peak_2"]))
-        background = comps["Background"] + comps["Peak_1"]
+        # Now, correct for edge affects
+        pcenter = result.values["Peak_1center"]
+        psigma = result.values["Peak_1sigma"]
+        pleft = pcenter - (2 * psigma)
+        pright = pcenter + (2 * psigma)
 
-        model = FitResults("one shoulder", result, background, ip, result.chisqr)
+        bkg_x_left = [i for i in x if i < pleft]
+        bkg_x_right = [i for i in x if i > pright]
+        bkg_x = bkg_x_left + bkg_x_right
+        bkg_y = list(y[: len(bkg_x_left)]) + list(y[-len(bkg_x_right) :])
+
+        rough_peak_positions = [pcenter]
+        edge_model = ConstantModel(prefix="Background")
+        edge_params = edge_model.make_params()
+
+        edge_result = edge_model.fit(data=bkg_y, params=edge_params, x=bkg_x)
+
+        # Refit with fixed background
+
+        rough_peak_positions = [min(x), pcenter]
+        final_model = ConstantModel(prefix="Background")
+        final_params = final_model.make_params()
+        final_params.add(
+            "Backgroundc", edge_result.best_values["Backgroundc"], vary=False
+        )
+        # params.add("Backgrounda", edge_result.best_values["Backgrounda"], vary=False)
+        # params.add("Backgroundb", edge_result.best_values["Backgroundb"], vary=False)
+        # params.add("Backgroundc", edge_result.best_values["Backgroundc"], vary=False)
+        # params.add("Baselinec", edge_result.best_values["Baselinec"], vary=False)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", center)
+            final_model = final_model + peak
+            final_params.update(pars)
+
+        # _ = final_model.eval(params, x=x)
+        final_result = final_model.fit(y, final_params, x=x)
+        final_comps = final_result.eval_components()
+
+        ip = float(max(final_comps["Peak_2"]))
+        background = final_comps["Background"] + final_comps["Peak_1"]
+
+        model = FitResults("one shoulder", result, background, ip, final_result.chisqr)
 
         return model
 
@@ -330,25 +489,81 @@ class PeakLogicFiles:
         rough_peak_positions = [center]
 
         min_y = float(min(y))
-        model = QuadraticModel(prefix="Background")
-        params = model.make_params()  # a=0, b=0, c=0
-        params.add("a", 0.000001, min=0)
-        params.add("b", 0.000001, min=0)
-        params.add("c", 0.000005, min=max([0, min_y]))
+        model = QuadraticModel(prefix="Background") + ConstantModel(prefix="Baseline")
+        params = model.make_params()
+        params.add("Backgrounda", 0.000001, min=0)
+        params.add("Backgroundb", 0.000001, min=0)
+        params.add("Backgroundc", 0.000005, min=max([0, min_y]))
+        params.add("Baselinec", 0, min=0)
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen, (max(y) - min(y)))
             model = model + peak
             params.update(pars)
 
         _ = model.eval(params, x=x)
         result = model.fit(y, params, x=x)
-        comps = result.eval_components()
+        # comps = result.eval_components()
 
-        ip = float(max(comps["Peak_1"]))
-        background = comps["Background"]
+        # Now, correct for edge affects
+        pcenter = result.values["Peak_1center"]
+        psigma = result.values["Peak_1sigma"]
+        pleft = pcenter - (2 * psigma)
+        pright = pcenter + (2 * psigma)
 
-        model = FitResults("quadratic", result, background, ip, result.chisqr)
+        bkg_x_left = [i for i in x if i < pleft]
+        if len(bkg_x_left) == 0:
+            bkg_x_left = list(x[:10])
+        # print(f"{len(bkg_x_left)}")
+        bkg_x_right = [i for i in x if i > pright]
+        if len(bkg_x_right) == 0:
+            bkg_x_right = list(x[-10:])
+        # print(f"{len(bkg_x_right)}")
+        bkg_x = list(bkg_x_left) + list(bkg_x_right)
+        # print(bkg_x)
+        bkg_y = list(y[: len(bkg_x_left)]) + list(y[-len(bkg_x_right) :])
+
+        # print(f"Quadratic, x length = {len(bkg_x)}, y length = {len(bkg_y)}")
+
+        rough_peak_positions = [pcenter]
+        edge_model = QuadraticModel(prefix="Background") + ConstantModel(
+            prefix="Baseline"
+        )
+        edge_params = edge_model.make_params()
+
+        edge_result = edge_model.fit(data=bkg_y, params=edge_params, x=bkg_x)
+
+        # Refit with fixed background
+
+        rough_peak_positions = [pcenter]
+        final_model = QuadraticModel(prefix="Background") + ConstantModel(
+            prefix="Baseline"
+        )
+        final_params = final_model.make_params()
+        final_params.add(
+            "Backgrounda", edge_result.best_values["Backgrounda"], vary=False
+        )
+        final_params.add(
+            "Backgroundb", edge_result.best_values["Backgroundb"], vary=False
+        )
+        final_params.add(
+            "Backgroundc", edge_result.best_values["Backgroundc"], vary=False
+        )
+        final_params.add("Baselinec", edge_result.best_values["Baselinec"], vary=False)
+
+        for i, cen in enumerate(rough_peak_positions):
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", center)
+            final_model = final_model + peak
+            final_params.update(pars)
+
+        # _ = final_model.eval(params, x=x)
+        final_result = final_model.fit(y, final_params, x=x)
+        final_comps = final_result.eval_components()
+
+        ip = float(max(final_comps["Peak_1"]))
+        background = final_comps["Background"] + final_comps["Baseline"]
+
+        model = FitResults("quadratic", result, background, ip, final_result.chisqr)
 
         return model
 
@@ -362,10 +577,12 @@ class PeakLogicFiles:
 
         model = ConstantModel(prefix="Background")
         params = model.make_params()
-        params.add("c", 0, min=0)  # , min=0)
+        params.add("Backgroundc", 0, min=0)
+
+        # model, params = self._create_linear_background()
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen, (max(y) - min(y)))
             model = model + peak
             params.update(pars)
 
@@ -409,7 +626,7 @@ class PeakLogicFiles:
         # convert results back to an array
         px: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(newx, dtype=np.float64)
         py: "np.ndarray[Any, np.dtype[np.float64]]" = np.array(newy, dtype=np.float64)
-        return px, py  # return partial x and partial y
+        return px, py
 
     def test_fit(self, dataind: int = 0) -> None:
         """Perform a fit for the first data point and display it for
@@ -456,8 +673,6 @@ class PeakLogicFiles:
                 y: "np.ndarray[Any, np.dtype[np.float64]]"
                 y_fp: "np.ndarray[Any, np.dtype[np.float64]]"
                 y_bkg: "np.ndarray[Any, np.dtype[np.float64]]"
-                # y_peak1: "np.ndarray[Any, np.dtype[np.float64]]"
-                # y_peak2: "np.ndarray[Any, np.dtype[np.float64]]"
                 ip: float
                 px: "np.ndarray[Any, np.dtype[np.float64]]"
 
@@ -475,8 +690,6 @@ class PeakLogicFiles:
         y: "np.ndarray[Any, np.dtype[np.float64]]",
         y_fp: "np.ndarray[Any, np.dtype[np.float64]]",
         y_bkg: "np.ndarray[Any, np.dtype[np.float64]]",
-        # y_peak1: "np.ndarray[Any, np.dtype[np.float64]]",
-        # y_peak2: "np.ndarray[Any, np.dtype[np.float64]]",
         file: str,
         ip: float,
         px: "np.ndarray[Any, np.dtype[np.float64]]",
@@ -486,8 +699,7 @@ class PeakLogicFiles:
         plt.close(2)  # close previous test if open
 
         # add background components
-        # FIXME: assumes given shape
-        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg  # + y_peak1
+        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg
 
         file_name: str = os.path.basename(file)
         self.fig2 = plt.figure(2)
@@ -495,9 +707,6 @@ class PeakLogicFiles:
         self.ax2.plot(x, y, "r.", label="data")
         self.ax2.plot(px, y_fp, label="fit")
         self.ax2.plot(px, full_bkg, label="background")
-        # self.ax2.plot(px, y_bkg, label="background")
-        # self.ax2.plot(px, y_peak1, label="peak 1")
-        # self.ax2.plot(px, y_peak2, label="methylene blue")
         self.ax2.set_xlabel("Potential (V)")
         self.ax2.set_ylabel("Current (A)")
         self.ax2.set_title("Fit of {}".format(str(file_name)))
