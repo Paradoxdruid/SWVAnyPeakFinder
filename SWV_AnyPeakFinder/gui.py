@@ -60,8 +60,8 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             padx=5,
             pady=5,
         )
-        mainframe.columnconfigure(0, weight=1)  # type: ignore
-        mainframe.rowconfigure(0, weight=1)  # type: ignore
+        mainframe.columnconfigure(0, weight=1)
+        mainframe.rowconfigure(0, weight=1)
 
         # define our variables in tkinter-form and give sane defaults
         self.filename_: tkinter.StringVar = tkinter.StringVar(value="output1")
@@ -181,8 +181,8 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             padx=5,
             pady=5,
         )
-        aboutframe.columnconfigure(0, weight=1)  # type: ignore
-        aboutframe.rowconfigure(0, weight=1)  # type: ignore
+        aboutframe.columnconfigure(0, weight=1)
+        aboutframe.rowconfigure(0, weight=1)
         ttk.Label(
             aboutframe,
             text=self.window_title,
@@ -218,8 +218,8 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             padx=5,
             pady=5,
         )
-        helpframe.columnconfigure(0, weight=1)  # type: ignore
-        helpframe.rowconfigure(0, weight=1)  # type: ignore
+        helpframe.columnconfigure(0, weight=1)
+        helpframe.rowconfigure(0, weight=1)
         ttk.Label(
             helpframe,
             text=("{} Help".format(self.window_title)),
@@ -265,8 +265,8 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             padx=5,
             pady=5,
         )
-        dataframe.columnconfigure(0, weight=1)  # type: ignore
-        dataframe.rowconfigure(0, weight=1)  # type: ignore
+        dataframe.columnconfigure(0, weight=1)
+        dataframe.rowconfigure(0, weight=1)
         ttk.Label(
             dataframe,
             text="Data for {}".format(str(filename)),

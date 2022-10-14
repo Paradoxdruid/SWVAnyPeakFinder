@@ -204,8 +204,8 @@ class PeakLogicFiles:
     def get_r2(
         x: "np.ndarray[Any, np.dtype[np.float64]]",
         y: "np.ndarray[Any, np.dtype[np.float64]]",
-    ) -> "np.ndarray[Any, np.dtype[np.float64]]":
-        return np.corrcoef(x, y)[0, 1] ** 2
+    ) -> float:
+        return np.corrcoef(x, y)[0, 1] ** 2  # type: ignore
 
     def fitting_math(
         self,
@@ -268,7 +268,7 @@ class PeakLogicFiles:
             # self._three_peak_model,
         ]
 
-        outcomes = [each(x, y, center) for each in models]
+        outcomes: List[FitResults] = [each(x, y, center) for each in models]
 
         # Find minimum chisqr and return that model
         best_model: FitResults = min(outcomes, key=lambda x: x.chisqr)
