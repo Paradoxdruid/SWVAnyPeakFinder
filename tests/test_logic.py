@@ -40,7 +40,7 @@ def test_PeakLogicFiles_add_lz_peak(mocker):
     TEST_CENTER = -0.4
     EXPECTED_PEAK = LorentzianModel(prefix="test")
     EXPECTED_PARAMS = EXPECTED_PEAK.make_params(
-        center=-0.4, amplitude=0.005, sigma=0.05
+        center=-0.4, amplitude=5e-06, sigma=0.05
     )
 
     mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
@@ -49,6 +49,10 @@ def test_PeakLogicFiles_add_lz_peak(mocker):
 
     _, actual_params = logic2.add_lz_peak(TEST_PREFIX, TEST_CENTER)
     # assert EXPECTED_PEAK == actual_peak  # FIXME
+    print("Expected")
+    print(repr(EXPECTED_PARAMS))
+    print("Actual")
+    print(repr(actual_params))
     assert EXPECTED_PARAMS == actual_params
 
 
@@ -62,10 +66,9 @@ def test_PeakLogicFiles_fitting_math_flag_0(mocker):
     EXPECTED_X = test_values.EXPECTED_X_FITTING_MATH
     EXPECTED_Y = test_values.EXPECTED_Y_FITTING_MATH
     EXPECTED_BEST_FIT = test_values.EXPECTED_BEST_FIT_FITTING_MATH
-    EXPECTED_IP = 1.1715001756255807e-06
-    EXPECTED_PEAK2 = test_values.EXPECTED_PEAK2_FITTING_MATH
+    EXPECTED_IP = 1.0829147363722235e-06
 
-    x, y, best_fit, _, _, peak2, ip, _ = logic.fitting_math(
+    x, y, best_fit, _, ip, _ = logic.fitting_math(
         TEST_X_FILE, TEST_Y_FILE, flag=TEST_FLAG
     )
 
@@ -73,7 +76,6 @@ def test_PeakLogicFiles_fitting_math_flag_0(mocker):
     np.testing.assert_array_almost_equal(EXPECTED_Y, y)
     np.testing.assert_array_almost_equal(EXPECTED_X, x)
     np.testing.assert_array_almost_equal(EXPECTED_BEST_FIT, best_fit)
-    np.testing.assert_array_almost_equal(EXPECTED_PEAK2, peak2)
 
 
 def test_PeakLogicFiles_fitting_math_flag_1(mocker):
@@ -82,7 +84,7 @@ def test_PeakLogicFiles_fitting_math_flag_1(mocker):
     TEST_Y_FILE = list(test_values.EXPECTED_Y_ARRAY)
     TEST_FLAG = 1
 
-    EXPECTED_IP = 1.1715001756255807e-06
+    EXPECTED_IP = 1.0829147363722235e-06
 
     ip = logic.fitting_math(TEST_X_FILE, TEST_Y_FILE, flag=TEST_FLAG)
 
@@ -112,7 +114,7 @@ def test_PeakLogicFiles_peak_math(mocker):
     TEST_X_FILE = [(list(np.linspace(-0.7, 0, 200)))]
     TEST_Y_FILE = [(list(test_values.EXPECTED_Y_ARRAY))]
 
-    EXPECTED_IP_LIST = [1.1715001756255807e-06]
+    EXPECTED_IP_LIST = [1.0829147363722235e-06]
     iplist = logic.peak_math(TEST_X_FILE, TEST_Y_FILE)
 
     assert EXPECTED_IP_LIST == iplist
