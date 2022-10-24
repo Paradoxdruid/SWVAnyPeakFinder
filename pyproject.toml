@@ -1,0 +1,56 @@
+[project]
+name = "SWV_AnyPeakFinder"
+authors = [{name = "Paradoxdruid", email = "bonham@gmail.com"}]
+readme = "README.md"
+description = "GUI application for resolving peak heights in square-wave voltammetry datafiles."
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3 :: Only",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy", 
+    "scipy", 
+    "matplotlib", 
+    "lmfit",
+]
+keywords = ["voltammetry", "biosensor", "science"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/Paradoxdruid/SWVAnyPeakFinder"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pytest",
+    "mypy",
+]
+
+[project.gui-scripts]
+swv_anypeakfinder = "SWV_AnyPeakFinder.gui:PeakFinderApp"
+
+[tool.setuptools]
+packages = ["SWV_AnyPeakFinder"]
+
+[tool.setuptools.dynamic]
+version = {attr = "SWV_AnyPeakFinder.__version__.__version__"}
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+ignore_missing_imports = true
+strict = true
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
