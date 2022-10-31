@@ -1,11 +1,11 @@
 """Unit tests for SWV_AnyPeakFinder.logic"""
 
 import numpy as np
-import SWV_AnyPeakFinder.gui as gui
-import SWV_AnyPeakFinder.logic as logic
 from lmfit.models import LorentzianModel
 
-import test_values
+import SWV_AnyPeakFinder.gui as gui
+import SWV_AnyPeakFinder.logic as logic
+from tests import test_values
 
 
 def setup_PeakFinderApp(mocker):

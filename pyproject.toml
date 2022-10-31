@@ -48,6 +48,7 @@ build-backend = "setuptools.build_meta"
 [tool.mypy]
 ignore_missing_imports = true
 strict = true
+files = "SWV_AnyPeakFinder/*.py"
 
 [tool.black]
 line-length = 88
