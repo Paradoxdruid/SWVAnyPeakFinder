@@ -14,9 +14,7 @@ This program finds peak height values (i.e., peak currents) from .txt files and 
 
 ## Installation
 
-```bash
-pip install SWV_AnyPeakFinder
-```
+`pip install SWV_AnyPeakFinder` or `conda install -c paradoxdruid swv_anypeakfinder`
 
 ## Getting Started
 
