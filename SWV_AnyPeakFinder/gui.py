@@ -9,15 +9,13 @@ selected files.
 """
 
 
-from __future__ import absolute_import
-
 import csv
 import os
 import platform
 import tkinter
 from pathlib import Path
 from tkinter import filedialog, ttk
-from typing import Any, List, Tuple
+from typing import Any
 
 import _csv
 import matplotlib.pyplot as plt
@@ -43,7 +41,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
 
         self.directory_manager()
         tkinter.Tk.__init__(self)
-        self.window_title: str = "SWV AnyPeakFinder {}".format(str(__version__))
+        self.window_title: str = f"SWV AnyPeakFinder {str(__version__)}"
 
         # invoke PeakLogicFiles to do the actual work
         self.logic: PeakLogicFiles = PeakLogicFiles(self)
@@ -66,7 +64,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         # define our variables in tkinter-form and give sane defaults
         self.filename_: tkinter.StringVar = tkinter.StringVar(value="output1")
         self.output: tkinter.StringVar = tkinter.StringVar()
-        self.filenames_: List[str] = []
+        self.filenames_: list[str] = []
         self.dir_selected: tkinter.IntVar = tkinter.IntVar(value=0)
         self.init_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.2)
         self.final_potential_: tkinter.DoubleVar = tkinter.DoubleVar(value=-0.4)
@@ -193,9 +191,9 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
             aboutframe,
             text=(
                 "Voltammogram data analysis\nsoftware for "
-                "CH Instruments data.\n\nWritten by\n{0}\n"
-                "http://www.andrewjbonham.com\n{1}\n\n\n"
-            ).format(str(__author__), str(__copyright__)),
+                f"CH Instruments data.\n\nWritten by\n{__author__}\n"
+                f"http://www.andrewjbonham.com\n{__copyright__}\n\n\n"
+            ),
             anchor="center",
             justify="center",
         ).grid(column=0, row=1, sticky="N")
@@ -222,7 +220,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         helpframe.rowconfigure(0, weight=1)
         ttk.Label(
             helpframe,
-            text=("{} Help".format(self.window_title)),
+            text=(f"{self.window_title} Help"),
             font="helvetica 12 bold",
             anchor="center",
         ).grid(column=0, row=0, sticky="NWE")
@@ -252,7 +250,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
     def data_popup(self, event: Any) -> None:
         """Display a pop-up window of data."""
 
-        filename: str = "{}.csv".format(str(self.filename_.get()))
+        filename: str = f"{str(self.filename_.get())}.csv"
         self.dataDialog = tkinter.Toplevel(self)
         self.dataDialog.resizable(tkinter.FALSE, tkinter.FALSE)
         self.dataDialog.geometry("+400+100")
@@ -269,15 +267,15 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         dataframe.rowconfigure(0, weight=1)
         ttk.Label(
             dataframe,
-            text="Data for {}".format(str(filename)),
+            text=f"Data for {str(filename)}",
             font="helvetica 12 bold",
             anchor="center",
         ).grid(column=0, row=0, sticky="NWE")
 
         # Read the output data
         self.df: _csv._reader = csv.reader(open(filename), delimiter=",")
-        listfile: List[List[str]] = list(self.df)
-        data_formatter: List[str] = []
+        listfile: list[list[str]] = list(self.df)
+        data_formatter: list[str] = []
         for item in listfile:
             data_formatter.append(" ".join(map(str, item)))
         data_output: str = "\n".join(map(str, data_formatter))
@@ -295,7 +293,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         """Allow user to select a directory where datafiles
         are located."""
 
-        filenamesRaw: List[str] = filedialog.askopenfilenames(
+        filenamesRaw: list[str] = filedialog.askopenfilenames(
             title="Title", filetypes=[("CSV Files", "*.csv"), ("TXT Files", "*.txt")]
         )  # type: ignore
         self.filenames_ = list(filenamesRaw)
@@ -304,7 +302,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
     def run_peakfinder(self) -> None:
         if peak_output := self.logic.peakfinder():
             printing_list, iplist, filename = peak_output
-            self.output.set("Wrote output to {}.csv".format(filename))
+            self.output.set(f"Wrote output to {filename}.csv")
             PointBrowser(self, self.logic, printing_list, iplist, filename)
         else:
             self.output.set("Failure")
@@ -324,18 +322,18 @@ class PointBrowser:  # pragma: no cover
         self,
         app: PeakFinderApp,
         logic: PeakLogicFiles,
-        xticksRaw: List[int],
-        y: List[float],
+        xticksRaw: list[int],
+        y: list[float],
         fileTitle: str,
     ) -> None:
         """Create the main output graph and make it clickable."""
 
         self.app: PeakFinderApp = app
         self.logic: PeakLogicFiles = logic
-        self.x: List[float] = list(range(len(xticksRaw)))
-        self.y: List[float] = y
-        self.xticks: Tuple[float, ...] = tuple(xticksRaw)
-        self.loc: List[float] = [d + 0.5 for d in self.x]
+        self.x: list[float] = list(range(len(xticksRaw)))
+        self.y: list[float] = y
+        self.xticks: tuple[float, ...] = tuple(xticksRaw)
+        self.loc: list[float] = [d + 0.5 for d in self.x]
 
         # Setup the matplotlib figure
         self.fig = plt.figure(1)
@@ -347,7 +345,7 @@ class PointBrowser:  # pragma: no cover
         self.ax.get_xaxis().set_ticks([])
         self.ax.set_ylabel("Current (A)")
         self.ax.ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
-        self.ax.set_title("Peak Current for {}".format(str(fileTitle)))
+        self.ax.set_title(f"Peak Current for {str(fileTitle)}")
 
         # Track which point is selected by the user
         self.lastind: int = 0
@@ -364,7 +362,7 @@ class PointBrowser:  # pragma: no cover
         )
 
         # Display button to fetch data
-        self.axb = plt.axes([0.75, 0.03, 0.15, 0.05])
+        self.axb = plt.axes((0.75, 0.03, 0.15, 0.05))
         self.button = plt.Button(self.axb, "Results")
         # self.ax.plot._test = self.button
         self.button.on_clicked(self.app.data_popup)

@@ -14,7 +14,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Optional
 
 import _csv
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ class PeakLogicFiles:
 
     def peakfinder(
         self,
-    ) -> Optional[Tuple[List[int], List[float], str]]:
+    ) -> Optional[tuple[list[int], list[float], str]]:
         """PeakLogic.peakfinder is the core function to find and report
         peak current values."""
 
@@ -62,23 +62,23 @@ class PeakLogicFiles:
 
         # grab the text variables that we need
         filename: str = str(self.app.filename_.get())
-        filenamesList: List[str] = self.app.filenames_
+        filenamesList: list[str] = self.app.filenames_
         path: str = os.path.dirname(os.path.normpath(filenamesList[0]))
         self.app.bar.set_maxval(len(filenamesList) + 1)
         os.chdir(path)
 
         # open our self.output file and set it up
-        with open("{}.csv".format(str(filename)), "w") as self.g:
-            self.g.write("{}\n\n".format(str(filename)))
+        with open(f"{str(filename)}.csv", "w") as self.g:
+            self.g.write(f"{str(filename)}\n\n")
             self.g.write("Fitting Parameters\n")
-            self.g.write("Peak Center,{}\n".format(str(self.app.peak_center_.get())))
-            self.g.write("Left Edge,{}\n".format(str(self.app.init_edge_.get())))
-            self.g.write("Right Edge,{}\n\n".format(str(self.app.final_edge_.get())))
+            self.g.write(f"Peak Center,{str(self.app.peak_center_.get())}\n")
+            self.g.write(f"Left Edge,{str(self.app.init_edge_.get())}\n")
+            self.g.write(f"Right Edge,{str(self.app.final_edge_.get())}\n\n")
             self.g.write("time,file,peak current\n")
 
             # run the peakfinder
-            printing_list: List[int]
-            iplist: List[float]
+            printing_list: list[int]
+            iplist: list[float]
             printing_list, iplist = self.loop_for_peaks_files(filenamesList)
 
         # Catch if peakfinder failed
@@ -89,7 +89,7 @@ class PeakLogicFiles:
         # Otherwise, show the user what was found
         # self.app.output.set("Wrote output to {}.csv".format(filename))
         # mainGraph =
-        peak_output: Tuple[List[int], List[float], str] = (
+        peak_output: tuple[list[int], list[float], str] = (
             printing_list,
             iplist,
             filename,
@@ -98,31 +98,31 @@ class PeakLogicFiles:
         return peak_output
 
     def loop_for_peaks_files(
-        self, filenamesList: List[str]
-    ) -> Tuple[List[int], List[float]]:
+        self, filenamesList: list[str]
+    ) -> tuple[list[int], list[float]]:
         """PeakLogic.loopForPeaks() will loop through each file,
         collecting data and sending it to the peak_math function."""
 
         # clear some lists to hold our data
-        full_x_lists: List[List[str]] = []
-        full_y_lists: List[List[str]] = []
+        full_x_lists: list[list[str]] = []
+        full_y_lists: list[list[str]] = []
         startT: int = -1
-        timelist: List[int] = []
-        printing_list: List[str] = []
+        timelist: list[int] = []
+        printing_list: list[str] = []
 
         plt.close(2)  # close test fitting graph if open
 
         for each in filenamesList:  # loop through each file
             try:
-                dialect: Type[csv.Dialect] = csv.Sniffer().sniff(
+                dialect: type[csv.Dialect] = csv.Sniffer().sniff(
                     open(each).read(1024), delimiters="\t,"
                 )
                 open(each).seek(0)
                 self.f: _csv._reader = csv.reader(open(each), dialect)
-                listfile: List[List[str]] = list(self.f)
-                t_list: List[int] = []
-                y_list: List[str] = []
-                rx_list: List[str] = []
+                listfile: list[list[str]] = list(self.f)
+                t_list: list[int] = []
+                y_list: list[str] = []
+                rx_list: list[str] = []
 
                 # remove the header rows from the file, leaving just the data
                 start_pattern: int = 3
@@ -133,7 +133,7 @@ class PeakLogicFiles:
                             start_pattern = index
                     # except Exception:
                     #     pass
-                datalist: List[List[str]] = listfile[start_pattern + 2 :]
+                datalist: list[list[str]] = listfile[start_pattern + 2 :]
                 pointT: int = 1000
                 # if it's the first data point, set the initial time to zero
                 if startT == -1:
@@ -158,22 +158,22 @@ class PeakLogicFiles:
                 printing_list.append(justName)
             except IndexError:  # Does this exception catch everything?
                 pass
-        iplist: List[float] = self.peak_math(full_x_lists, full_y_lists)
+        iplist: list[float] = self.peak_math(full_x_lists, full_y_lists)
 
         # write the output csv file
         for i, v, y in zip(iplist, timelist, printing_list):
-            self.g.write("{0},{1},{2}\n".format(str(v), str(y), str(i)))
+            self.g.write(f"{str(v)},{str(y)},{str(i)}\n")
 
         # return time and peak current for graphing
         return timelist, iplist
 
     def peak_math(
-        self, listsx: List[List[str]], listsy: List[List[str]]
-    ) -> List[float]:
+        self, listsx: list[list[str]], listsy: list[list[str]]
+    ) -> list[float]:
         """PeakLogic.peak_math() passes each data file to .fitting_math,
         and returns a list of peak currents."""
 
-        iplist: List[float] = []
+        iplist: list[float] = []
         count: int = 1
 
         for xfile, yfile in zip(listsx, listsy):
@@ -191,7 +191,7 @@ class PeakLogicFiles:
     @staticmethod
     def add_lz_peak(
         prefix: str, center: float, amplitude: float = 0.000005, sigma: float = 0.05
-    ) -> Tuple[LorentzianModel, Any]:
+    ) -> tuple[LorentzianModel, Any]:
         """Generate a reasonable Lorenzian peak for model fitting."""
         peak = LorentzianModel(prefix=prefix)
         pars = peak.make_params()
@@ -209,8 +209,8 @@ class PeakLogicFiles:
 
     def fitting_math(
         self,
-        xfile: List[str],
-        yfile: List[str],
+        xfile: list[str],
+        yfile: list[str],
         flag: int = 1,
     ) -> Any:
         """PeakLogic.fitting_math() fits the data to linear background
@@ -268,7 +268,7 @@ class PeakLogicFiles:
             # self._three_peak_model,
         ]
 
-        outcomes: List[FitResults] = [each(x, y, center) for each in models]
+        outcomes: list[FitResults] = [each(x, y, center) for each in models]
 
         # Find minimum chisqr and return that model
         best_model: FitResults = min(outcomes, key=lambda x: x.chisqr)
@@ -276,7 +276,7 @@ class PeakLogicFiles:
         return best_model
 
     @staticmethod
-    def _create_linear_background() -> Tuple[LinearModel, Parameters]:
+    def _create_linear_background() -> tuple[LinearModel, Parameters]:
         model = LinearModel(prefix="Background")
         params = model.make_params()
         params.add("Backgroundslope", 0)  # , min=0)
@@ -290,7 +290,7 @@ class PeakLogicFiles:
         y: "np.ndarray[Any, np.dtype[np.float64]]",
         pleft: float,
         pright: float,
-    ) -> Tuple[List[float], List[float]]:
+    ) -> tuple[list[float], list[float]]:
         bkg_x_left = [i for i in x if i < pleft]
         if len(bkg_x_left) == 0:
             bkg_x_left = list(x[:10])
@@ -592,15 +592,15 @@ class PeakLogicFiles:
         return model
 
     def trunc_edges(
-        self, listx: List[str], listy: List[str]
-    ) -> Tuple[
+        self, listx: list[str], listy: list[str]
+    ) -> tuple[
         "np.ndarray[Any, np.dtype[np.float64]]", "np.ndarray[Any, np.dtype[np.float64]]"
     ]:
         """PeakLogic.trunc_edges() removes outlier regions of known
         bad signal from an x-y data list and returns the inner edges."""
 
-        newx: List[float] = []
-        newy: List[float] = []
+        newx: list[float] = []
+        newy: list[float] = []
         start_spot: str
         start_h: str
         for start_spot, start_h in zip(listx, listy):
@@ -629,15 +629,15 @@ class PeakLogicFiles:
         # Make sure the user has selected a directory
         if int(self.app.dir_selected.get()) == 1:
             try:
-                filenamesList: List[str] = self.app.filenames_
+                filenamesList: list[str] = self.app.filenames_
                 file: str = filenamesList[dataind]
-                dialect: Type[csv.Dialect] = csv.Sniffer().sniff(
+                dialect: type[csv.Dialect] = csv.Sniffer().sniff(
                     open(file).read(1024), delimiters="\t,"
                 )
 
                 open(file).seek(0)  # open the first data file
                 self.testfile: _csv._reader = csv.reader(open(file), dialect)
-                listfile: List[List[str]] = list(self.testfile)
+                listfile: list[list[str]] = list(self.testfile)
 
                 # remove the header rows from the file, leaving just the data
                 start_pattern: int = 3
@@ -648,10 +648,10 @@ class PeakLogicFiles:
                                 start_pattern = index
                     except IndexError:
                         pass
-                datalist: List[List[str]] = listfile[start_pattern + 2 :]
+                datalist: list[list[str]] = listfile[start_pattern + 2 :]
 
-                x_list: List[str] = []
-                y_list: List[str] = []
+                x_list: list[str] = []
+                y_list: list[str] = []
                 for row in datalist:
                     if row == []:  # skip empty lines
                         pass
@@ -703,7 +703,7 @@ class PeakLogicFiles:
         self.ax2.plot(px, full_bkg, label="background")
         self.ax2.set_xlabel("Potential (V)")
         self.ax2.set_ylabel("Current (A)")
-        self.ax2.set_title("Fit of {}".format(str(file_name)))
+        self.ax2.set_title(f"Fit of {str(file_name)}")
         self.ax2.ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
         self.ax2.legend()
         self.fig2.subplots_adjust(bottom=0.15)
