@@ -18,7 +18,8 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 import _csv
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
 
 from SWV_AnyPeakFinder.__version__ import __author__, __copyright__, __version__
 from SWV_AnyPeakFinder.logic import PeakLogicFiles
@@ -311,7 +312,7 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
 # ##############################################################################
 
 
-class PointBrowser:  # pragma: no cover
+class PointBrowser(tkinter.Toplevel):  # pragma: no cover
     """This is the class that draws the main graph of data for Peak Finder.
 
     This class creates a line and point graph with clickable points.
@@ -328,6 +329,7 @@ class PointBrowser:  # pragma: no cover
     ) -> None:
         """Create the main output graph and make it clickable."""
 
+        super().__init__()
         self.app: PeakFinderApp = app
         self.logic: PeakLogicFiles = logic
         self.x: list[float] = list(range(len(xticksRaw)))
@@ -336,7 +338,7 @@ class PointBrowser:  # pragma: no cover
         self.loc: list[float] = [d + 0.5 for d in self.x]
 
         # Setup the matplotlib figure
-        self.fig = plt.figure(1)
+        self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
         self.ax.plot(self.x, self.y, "bo-", picker=True, pickradius=5)
         self.fig.canvas.mpl_connect("pick_event", self.onpick)
@@ -347,29 +349,12 @@ class PointBrowser:  # pragma: no cover
         self.ax.ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
         self.ax.set_title(f"Peak Current for {str(fileTitle)}")
 
-        # Track which point is selected by the user
-        self.lastind: int = 0
-
-        # Add our data
-        self.selected = self.ax.plot(
-            [self.x[0]],
-            [self.y[0]],
-            "o",
-            ms=12,
-            alpha=0.4,
-            color="yellow",
-            visible=True,
-        )
-
-        # Display button to fetch data
-        self.axb = plt.axes((0.75, 0.03, 0.15, 0.05))
-        self.button = plt.Button(self.axb, "Results")
-        # self.ax.plot._test = self.button
-        self.button.on_clicked(self.app.data_popup)
-
         # Draw the figure
-        self.fig.canvas.draw()
-        plt.show()
+        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)
+        self.drawing_area.draw()
+        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)
+        self.toolbar.update()
+        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)
 
     def onpick(self, event: Any) -> None:
         """Capture the click event, find the corresponding data
@@ -382,24 +367,6 @@ class PointBrowser:  # pragma: no cover
         dataind = x[ind[0]]
 
         self.logic.test_fit(dataind)
-
-        self.fig.canvas.draw()
-        plt.show()
-
-    def update(self) -> None:
-        """Update the main graph and call my response function."""
-
-        if self.lastind is None:
-            return
-        dataind: int = self.lastind
-
-        self.selected.set_visible(True)
-        self.selected.set_data(self.x[dataind], self.y[dataind])
-
-        self.logic.test_fit(dataind)
-
-        self.fig.canvas.draw()
-        plt.show()
 
 
 # ##############################################################################

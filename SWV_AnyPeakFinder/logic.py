@@ -13,14 +13,16 @@ import csv
 import os
 import re
 import sys
+import tkinter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
 import _csv
-import matplotlib.pyplot as plt
 import numpy as np
 from lmfit import Parameters
 from lmfit.models import ConstantModel, LinearModel, LorentzianModel, QuadraticModel
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
 
 if TYPE_CHECKING:  # pragma: no cover
     from SWV_AnyPeakFinder.gui import PeakFinderApp
@@ -35,6 +37,51 @@ class FitResults:
     background: Any
     ip: float
     chisqr: float
+
+
+class TestGraph(tkinter.Toplevel):  # pragma: no cover
+    """A matplotlib plot results window in Tkinter"""
+
+    def __init__(
+        self,
+        x: "np.ndarray[Any, np.dtype[np.float64]]",
+        y: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_fp: "np.ndarray[Any, np.dtype[np.float64]]",
+        y_bkg: "np.ndarray[Any, np.dtype[np.float64]]",
+        file: str,
+        ip: float,
+        px: "np.ndarray[Any, np.dtype[np.float64]]",
+    ) -> None:
+
+        super().__init__()
+
+        file_name: str = os.path.basename(file)
+        self.fig = Figure()
+        self.ax2 = self.fig.add_subplot(111)
+        self.ax2.plot(x, y, "r.", label="data")
+        self.ax2.plot(px, y_fp, label="fit")
+        self.ax2.plot(px, y_bkg, label="background")
+        self.ax2.set_xlabel("Potential (V)")
+        self.ax2.set_ylabel("Current (A)")
+        self.ax2.set_title(f"Fit of {str(file_name)}")
+        self.ax2.ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
+        self.ax2.legend()
+        self.fig.subplots_adjust(bottom=0.15)
+        self.fig.subplots_adjust(left=0.15)
+        self.text = self.ax2.text(
+            0.1,
+            0.95,
+            "Peak Current:\n%.2e A" % ip,
+            transform=self.ax2.transAxes,
+            va="top",
+        )
+
+        # Draw the figure
+        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)
+        self.drawing_area.draw()
+        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)
+        self.toolbar.update()
+        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)
 
 
 class PeakLogicFiles:
@@ -109,8 +156,6 @@ class PeakLogicFiles:
         startT: int = -1
         timelist: list[int] = []
         printing_list: list[str] = []
-
-        plt.close(2)  # close test fitting graph if open
 
         for each in filenamesList:  # loop through each file
             try:
@@ -690,31 +735,5 @@ class PeakLogicFiles:
     ) -> None:  # pragma: no cover
         """PeakLogic.test_grapher() displays a graph of the test fitting."""
 
-        plt.close(2)  # close previous test if open
-
-        # add background components
-        full_bkg: "np.ndarray[Any, np.dtype[np.float64]]" = y_bkg
-
-        file_name: str = os.path.basename(file)
-        self.fig2 = plt.figure(2)
-        self.ax2 = self.fig2.add_subplot(111)
-        self.ax2.plot(x, y, "r.", label="data")
-        self.ax2.plot(px, y_fp, label="fit")
-        self.ax2.plot(px, full_bkg, label="background")
-        self.ax2.set_xlabel("Potential (V)")
-        self.ax2.set_ylabel("Current (A)")
-        self.ax2.set_title(f"Fit of {str(file_name)}")
-        self.ax2.ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
-        self.ax2.legend()
-        self.fig2.subplots_adjust(bottom=0.15)
-        self.fig2.subplots_adjust(left=0.15)
-        self.text = self.ax2.text(
-            0.1,
-            0.95,
-            "Peak Current:\n%.2e A" % ip,
-            transform=self.ax2.transAxes,
-            va="top",
-        )
-
-        self.fig2.canvas.draw()
-        plt.show()
+        # Pass all parameters to a TestGraph window
+        TestGraph(x, y, y_fp, y_bkg, file, ip, px)
