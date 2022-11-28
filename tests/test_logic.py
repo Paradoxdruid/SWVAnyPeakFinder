@@ -117,4 +117,4 @@ def test_PeakLogicFiles_peak_math(mocker):
     EXPECTED_IP_LIST = [1.0829147363722235e-06]
     iplist = logic.peak_math(TEST_X_FILE, TEST_Y_FILE)
 
-    assert EXPECTED_IP_LIST == iplist
+    np.testing.assert_almost_equal(EXPECTED_IP_LIST, iplist)
