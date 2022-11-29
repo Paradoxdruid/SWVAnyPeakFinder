@@ -12,9 +12,9 @@ from tests import test_values
 def setup_PeakFinderApp(mocker: MockerFixture) -> logic.PeakLogicFiles:
     mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
     app = gui.PeakFinderApp()
-    app.peak_center_.get.return_value = -0.4
-    app.final_edge_.get.return_value = -0.6
-    app.init_edge_.get.return_value = -0.1
+    app.peak_center_.get.return_value = -0.4  # type:ignore[attr-defined]
+    app.final_edge_.get.return_value = -0.6  # type:ignore[attr-defined]
+    app.init_edge_.get.return_value = -0.1  # type:ignore[attr-defined]
     logic2 = logic.PeakLogicFiles(app)
 
     return logic2
@@ -23,8 +23,8 @@ def setup_PeakFinderApp(mocker: MockerFixture) -> logic.PeakLogicFiles:
 def test_PeakLogicFiles_trunc_edges(mocker: MockerFixture) -> None:
     mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
     app = gui.PeakFinderApp()
-    app.final_edge_.get.return_value = -0.9
-    app.init_edge_.get.return_value = -0.5
+    app.final_edge_.get.return_value = -0.9  # type:ignore[attr-defined]
+    app.init_edge_.get.return_value = -0.5  # type:ignore[attr-defined]
 
     TEST_X: list[str] = ["-1", "-0.9", "-0.8", "-0.7", "-0.6", "-0.5", "-0.4"]
     TEST_Y: list[str] = ["1", "2", "3", "4", "5", "6", "7"]
