@@ -2,13 +2,14 @@
 
 import numpy as np
 from lmfit.models import LorentzianModel
+from pytest_mock.plugin import MockerFixture
 
 import SWV_AnyPeakFinder.gui as gui
 import SWV_AnyPeakFinder.logic as logic
 from tests import test_values
 
 
-def setup_PeakFinderApp(mocker):
+def setup_PeakFinderApp(mocker: MockerFixture) -> logic.PeakLogicFiles:
     mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
     app = gui.PeakFinderApp()
     app.peak_center_.get.return_value = -0.4
@@ -19,23 +20,22 @@ def setup_PeakFinderApp(mocker):
     return logic2
 
 
-def test_PeakLogicFiles_trunc_edges(mocker):
+def test_PeakLogicFiles_trunc_edges(mocker: MockerFixture) -> None:
     mocker.patch("SWV_AnyPeakFinder.gui.PeakFinderApp")
     app = gui.PeakFinderApp()
     app.final_edge_.get.return_value = -0.9
     app.init_edge_.get.return_value = -0.5
 
-    TEST_X = np.array([-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4])
-    TEST_Y = np.array([1, 2, 3, 4, 5, 6, 7])
+    TEST_X: list[str] = ["-1", "-0.9", "-0.8", "-0.7", "-0.6", "-0.5", "-0.4"]
+    TEST_Y: list[str] = ["1", "2", "3", "4", "5", "6", "7"]
     EXPECTED = (np.array([-0.8, -0.7, -0.6]), np.array([3, 4, 5]))
     logic2 = logic.PeakLogicFiles(app)
     actual = logic2.trunc_edges(TEST_X, TEST_Y)
 
     np.testing.assert_array_equal(EXPECTED, actual)
-    # assert (EXPECTED == actual).all()
 
 
-def test_PeakLogicFiles_add_lz_peak(mocker):
+def test_PeakLogicFiles_add_lz_peak(mocker: MockerFixture) -> None:
     TEST_PREFIX = "test"
     TEST_CENTER = -0.4
     EXPECTED_PEAK = LorentzianModel(prefix="test")
@@ -56,7 +56,7 @@ def test_PeakLogicFiles_add_lz_peak(mocker):
     assert EXPECTED_PARAMS == actual_params
 
 
-def test_PeakLogicFiles_fitting_math_flag_0(mocker):
+def test_PeakLogicFiles_fitting_math_flag_0(mocker: MockerFixture) -> None:
     logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = list(np.linspace(-0.7, 0, 200))
     x = np.linspace(-0.7, 0, 200)
@@ -72,13 +72,13 @@ def test_PeakLogicFiles_fitting_math_flag_0(mocker):
         TEST_X_FILE, TEST_Y_FILE, flag=TEST_FLAG
     )
 
-    assert EXPECTED_IP == ip
+    np.testing.assert_almost_equal(EXPECTED_IP, ip)
     np.testing.assert_array_almost_equal(EXPECTED_Y, y)
     np.testing.assert_array_almost_equal(EXPECTED_X, x)
     np.testing.assert_array_almost_equal(EXPECTED_BEST_FIT, best_fit)
 
 
-def test_PeakLogicFiles_fitting_math_flag_1(mocker):
+def test_PeakLogicFiles_fitting_math_flag_1(mocker: MockerFixture) -> None:
     logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = list(np.linspace(-0.7, 0, 200))
     TEST_Y_FILE = list(test_values.EXPECTED_Y_ARRAY)
@@ -88,10 +88,10 @@ def test_PeakLogicFiles_fitting_math_flag_1(mocker):
 
     ip = logic.fitting_math(TEST_X_FILE, TEST_Y_FILE, flag=TEST_FLAG)
 
-    assert EXPECTED_IP == ip
+    np.testing.assert_almost_equal(EXPECTED_IP, ip)
 
 
-def test_PeakLogicFiles_test_fit(mocker):
+def test_PeakLogicFiles_test_fit(mocker: MockerFixture) -> None:
     pass
     # mocker.patch("SWV_AnyPeakFinder.SWV_AnyPeakFinder.PeakFinderApp")
     # app = swv.PeakFinderApp()
@@ -109,7 +109,7 @@ def test_PeakLogicFiles_test_fit(mocker):
     # logic.test_fit()
 
 
-def test_PeakLogicFiles_peak_math(mocker):
+def test_PeakLogicFiles_peak_math(mocker: MockerFixture) -> None:
     logic = setup_PeakFinderApp(mocker)
     TEST_X_FILE = [(list(np.linspace(-0.7, 0, 200)))]
     TEST_Y_FILE = [(list(test_values.EXPECTED_Y_ARRAY))]
