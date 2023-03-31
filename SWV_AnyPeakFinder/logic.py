@@ -52,7 +52,6 @@ class TestGraph(tkinter.Toplevel):  # pragma: no cover
         ip: float,
         px: "np.ndarray[Any, np.dtype[np.float64]]",
     ) -> None:
-
         super().__init__()
 
         file_name: str = os.path.basename(file)
@@ -206,7 +205,7 @@ class PeakLogicFiles:
         iplist: list[float] = self.peak_math(full_x_lists, full_y_lists)
 
         # write the output csv file
-        for i, v, y in zip(iplist, timelist, printing_list):
+        for i, v, y in zip(iplist, timelist, printing_list, strict=True):
             self.g.write(f"{str(v)},{str(y)},{str(i)}\n")
 
         # return time and peak current for graphing
@@ -221,7 +220,7 @@ class PeakLogicFiles:
         iplist: list[float] = []
         count: int = 1
 
-        for xfile, yfile in zip(listsx, listsy):
+        for xfile, yfile in zip(listsx, listsy, strict=True):
             ip = self.fitting_math(xfile, yfile, 1)
 
             # check data quality
@@ -390,7 +389,7 @@ class PeakLogicFiles:
         )
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", center)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
             final_model = final_model + peak
             final_params.update(pars)
 
@@ -531,7 +530,7 @@ class PeakLogicFiles:
         final_params.add("Baselinec", edge_result.best_values["Baselinec"], vary=False)
 
         for i, cen in enumerate(rough_peak_positions):
-            peak, pars = self.add_lz_peak(f"Peak_{i+1}", center)
+            peak, pars = self.add_lz_peak(f"Peak_{i+1}", cen)
             final_model = final_model + peak
             final_params.update(pars)
 
@@ -648,7 +647,7 @@ class PeakLogicFiles:
         newy: list[float] = []
         start_spot: str
         start_h: str
-        for start_spot, start_h in zip(listx, listy):
+        for start_spot, start_h in zip(listx, listy, strict=True):
             spot: float = float(start_spot)
             h: float = float(start_h)
             low: float = float(self.app.final_edge_.get())
