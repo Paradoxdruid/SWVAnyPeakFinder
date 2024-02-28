@@ -18,7 +18,10 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 import _csv
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import (  # type: ignore[attr-defined]
+    FigureCanvasTkAgg,
+    NavigationToolbar2Tk,
+)
 from matplotlib.figure import Figure
 
 from SWV_AnyPeakFinder.__version__ import __author__, __copyright__, __version__
@@ -80,22 +83,32 @@ class PeakFinderApp(tkinter.Tk):  # pragma: no cover
         )
 
         ttk.Entry(mainframe, width=12, textvariable=self.filename_).grid(
-            column=2, row=2, sticky="WE"  # (tkinter.W, tkinter.E)
+            column=2,
+            row=2,
+            sticky="WE",  # (tkinter.W, tkinter.E)
         )
         ttk.Label(mainframe, text="Filename:").grid(column=1, row=2, sticky="W")
 
         ttk.Entry(mainframe, width=12, textvariable=self.peak_center_).grid(
-            column=2, row=9, sticky="WE"  # (tkinter.W, tkinter.E)
+            column=2,
+            row=9,
+            sticky="WE",  # (tkinter.W, tkinter.E)
         )
         ttk.Label(mainframe, text="Peak Center:").grid(
-            column=1, row=9, sticky="W"  # tkinter.W
+            column=1,
+            row=9,
+            sticky="W",  # tkinter.W
         )
 
         ttk.Label(mainframe, text="Peak Location Guess", font="helvetica 10 bold").grid(
-            column=1, row=5, sticky="W"  # tkinter.W
+            column=1,
+            row=5,
+            sticky="W",  # tkinter.W
         )
         ttk.Label(mainframe, text="(only change if necessary)").grid(
-            column=1, row=6, sticky="W"  # tkinter.W
+            column=1,
+            row=6,
+            sticky="W",  # tkinter.W
         )
 
         # Display Generate button
@@ -350,11 +363,11 @@ class PointBrowser(tkinter.Toplevel):  # pragma: no cover
         self.ax.set_title(f"Peak Current for {str(fileTitle)}")
 
         # Draw the figure
-        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)
-        self.drawing_area.draw()
-        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)
+        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)  # type: ignore[no-untyped-call]
+        self.drawing_area.draw()  # type: ignore[no-untyped-call]
+        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)  # type: ignore[no-untyped-call]
         self.toolbar.update()
-        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)
+        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)  # type: ignore[no-untyped-call]
 
     def onpick(self, event: Any) -> None:
         """Capture the click event, find the corresponding data

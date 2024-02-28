@@ -21,7 +21,10 @@ import _csv
 import numpy as np
 from lmfit import Parameters
 from lmfit.models import ConstantModel, LinearModel, LorentzianModel, QuadraticModel
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import (  # type: ignore[attr-defined]
+    FigureCanvasTkAgg,
+    NavigationToolbar2Tk,
+)
 from matplotlib.figure import Figure
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -76,11 +79,11 @@ class TestGraph(tkinter.Toplevel):  # pragma: no cover
         )
 
         # Draw the figure
-        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)
-        self.drawing_area.draw()
-        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)
+        self.drawing_area = FigureCanvasTkAgg(self.fig, master=self)  # type: ignore[no-untyped-call]
+        self.drawing_area.draw()  # type: ignore[no-untyped-call]
+        self.toolbar = NavigationToolbar2Tk(self.drawing_area, self)  # type: ignore[no-untyped-call]
         self.toolbar.update()
-        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)
+        self.drawing_area.get_tk_widget().pack(side="top", fill="both", expand=1)  # type: ignore[no-untyped-call]
 
 
 class PeakLogicFiles:
