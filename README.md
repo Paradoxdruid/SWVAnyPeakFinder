@@ -8,6 +8,8 @@
 
 ![PyPI](https://img.shields.io/pypi/v/SWV_AnyPeakFinder) [![Anaconda-Server Badge](https://anaconda.org/paradoxdruid/swv_anypeakfinder/badges/version.svg)](https://anaconda.org/paradoxdruid/swv_anypeakfinder)
 
+[![DOI](https://zenodo.org/badge/140206211.svg)](https://zenodo.org/badge/latestdoi/140206211)
+
 This program finds peak height values (i.e., peak currents) from .txt files and .csv files containing squarewave voltammogram data, using any selected files.
 
 ![program screenshot](images/SWV_Peakfinder.png)
