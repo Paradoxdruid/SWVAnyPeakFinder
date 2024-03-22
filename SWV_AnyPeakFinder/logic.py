@@ -318,7 +318,7 @@ class PeakLogicFiles:
         outcomes: list[FitResults] = [each(x, y, center) for each in models]
 
         # Find minimum chisqr and return that model
-        best_model: FitResults = min(outcomes, key=lambda x: x.chisqr)
+        best_model: FitResults = min(outcomes, key=lambda x: x.result.bic)
 
         return best_model
 
